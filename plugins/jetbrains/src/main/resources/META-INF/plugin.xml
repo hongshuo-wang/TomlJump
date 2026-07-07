@@ -1,0 +1,15 @@
+<idea-plugin>
+    <id>com.tomljump</id>
+    <name>TomlJump</name>
+    <vendor email="maintainers@tomljump.local" url="https://tomljump.local">TomlJump</vendor>
+    <description><![CDATA[
+        Navigation from TOML string references to files and code symbols.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.toml.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <psi.referenceContributor implementation="com.tomljump.jetbrains.TomlJumpReferenceContributor"/>
+    </extensions>
+</idea-plugin>
