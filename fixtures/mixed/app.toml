@@ -1,0 +1,8 @@
+schema = "./schemas/user.json"
+template = "templates/email.html"
+python_handler = "app.user:create_user"
+java_factory = "com.example.PaymentClient"
+go_handler = "handlers.UserHandler"
+ts_job = "src/jobs/sync"
+js_job = "src/jobs/sync"
+plain_value = "hello world"
