@@ -7,8 +7,10 @@ import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceProvider
 import com.intellij.psi.PsiReferenceRegistrar
 import com.intellij.util.ProcessingContext
+import com.tomljump.core.ReferenceKind
 import com.tomljump.core.TomlReferenceClassifier
 import com.tomljump.jetbrains.resolver.TomlJumpResolver
+import org.toml.lang.psi.TomlLiteral
 
 class TomlJumpReferenceContributor : PsiReferenceContributor() {
     private val classifier = TomlReferenceClassifier()
@@ -16,7 +18,7 @@ class TomlJumpReferenceContributor : PsiReferenceContributor() {
 
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         registrar.registerReferenceProvider(
-            PlatformPatterns.psiElement(),
+            PlatformPatterns.psiElement(TomlLiteral::class.java),
             object : PsiReferenceProvider() {
                 override fun getReferencesByElement(
                     element: PsiElement,
@@ -28,6 +30,9 @@ class TomlJumpReferenceContributor : PsiReferenceContributor() {
 
                     val extracted = TomlStringValueExtractor.extract(element) ?: return PsiReference.EMPTY_ARRAY
                     val reference = classifier.classify(extracted.value) ?: return PsiReference.EMPTY_ARRAY
+                    if (reference.kind != ReferenceKind.FILE_PATH) {
+                        return PsiReference.EMPTY_ARRAY
+                    }
 
                     return arrayOf(
                         TomlJumpStringReference(

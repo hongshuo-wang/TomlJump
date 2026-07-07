@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.tomljump</id>
     <name>TomlJump</name>
-    <vendor email="maintainers@tomljump.local" url="https://tomljump.local">TomlJump</vendor>
+    <vendor>TomlJump</vendor>
     <description><![CDATA[
         Navigation from TOML string references to files and code symbols.
     ]]></description>
