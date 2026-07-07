@@ -42,6 +42,38 @@ class TomlReferenceClassifierTest {
     }
 
     @Test
+    fun `ignores common bare filenames`() {
+        listOf(
+            "package.json",
+            "Cargo.toml",
+            "config.yaml",
+            "README.md",
+        ).forEach { value ->
+            assertNull(classifier.classify(value), value)
+        }
+    }
+
+    @Test
+    fun `ignores slash delimited numeric values`() {
+        listOf(
+            "1/2",
+            "2026/07/07",
+        ).forEach { value ->
+            assertNull(classifier.classify(value), value)
+        }
+    }
+
+    @Test
+    fun `ignores non ascii dotted identifiers and callables`() {
+        listOf(
+            "模块.配置",
+            "服务:启动",
+        ).forEach { value ->
+            assertNull(classifier.classify(value), value)
+        }
+    }
+
+    @Test
     fun `ignores arbitrary prose`() {
         assertNull(classifier.classify("hello world"))
     }

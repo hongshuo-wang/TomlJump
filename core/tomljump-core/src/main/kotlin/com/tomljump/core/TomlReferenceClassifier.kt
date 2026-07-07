@@ -44,6 +44,9 @@ class TomlReferenceClassifier {
         if (segments.any { it.isEmpty() || it == "." || it == ".." }) {
             return null
         }
+        if (!hasMeaningfulPathSegment(segments)) {
+            return null
+        }
 
         return TomlReference(
             rawValue = rawValue,
@@ -53,6 +56,9 @@ class TomlReferenceClassifier {
     }
 
     private fun parseClassOrModule(rawValue: String): TomlReference? {
+        if (isCommonBareFilename(rawValue)) {
+            return null
+        }
         if (!isDottedIdentifier(rawValue)) {
             return null
         }
@@ -71,7 +77,36 @@ class TomlReferenceClassifier {
 
     private fun isIdentifier(value: String): Boolean {
         return value.isNotEmpty() &&
-            (value.first().isLetter() || value.first() == '_') &&
-            value.drop(1).all { it.isLetterOrDigit() || it == '_' }
+            (isAsciiLetter(value.first()) || value.first() == '_') &&
+            value.drop(1).all { isAsciiLetter(it) || it.isDigit() || it == '_' }
+    }
+
+    private fun hasMeaningfulPathSegment(segments: List<String>): Boolean {
+        return segments.drop(1).any { segment ->
+            hasDotExtension(segment) || segment.any(::isAsciiLetter)
+        }
+    }
+
+    private fun hasDotExtension(segment: String): Boolean {
+        val dotIndex = segment.lastIndexOf('.')
+        return dotIndex > 0 && dotIndex < segment.lastIndex && segment.substring(dotIndex + 1).all(::isAsciiLetter)
+    }
+
+    private fun isCommonBareFilename(value: String): Boolean {
+        if (value.contains('/')) {
+            return false
+        }
+
+        val dotIndex = value.lastIndexOf('.')
+        if (dotIndex <= 0 || dotIndex == value.lastIndex) {
+            return false
+        }
+
+        val extension = value.substring(dotIndex + 1)
+        return extension in setOf("json", "toml", "yaml", "yml", "md")
+    }
+
+    private fun isAsciiLetter(char: Char): Boolean {
+        return char in 'A'..'Z' || char in 'a'..'z'
     }
 }
