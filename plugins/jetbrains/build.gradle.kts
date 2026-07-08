@@ -17,6 +17,7 @@ dependencies {
     }
 
     testImplementation(kotlin("test"))
+    testImplementation("junit:junit:4.13.2")
 }
 
 intellijPlatform {
@@ -30,8 +31,4 @@ intellijPlatform {
             untilBuild = providers.gradleProperty("pluginUntilBuild")
         }
     }
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
