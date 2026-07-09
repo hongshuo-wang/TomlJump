@@ -26,6 +26,10 @@ path_java_is_usable() {
     [[ "$(java_major "$(command -v java)")" -ge 17 ]]
 }
 
+if ! java_home_is_usable && path_java_is_usable; then
+  unset JAVA_HOME
+fi
+
 if ! java_home_is_usable && ! path_java_is_usable; then
   if [[ -x "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin/java" ]]; then
     export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
