@@ -21,7 +21,12 @@ java_home_is_usable() {
     [[ "$(java_major "${JAVA_HOME}/bin/java")" -ge 17 ]]
 }
 
-if ! java_home_is_usable; then
+path_java_is_usable() {
+  command -v java >/dev/null 2>&1 &&
+    [[ "$(java_major "$(command -v java)")" -ge 17 ]]
+}
+
+if ! java_home_is_usable && ! path_java_is_usable; then
   if [[ -x "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin/java" ]]; then
     export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
   elif command -v /usr/libexec/java_home >/dev/null 2>&1; then
@@ -29,7 +34,7 @@ if ! java_home_is_usable; then
   fi
 fi
 
-if ! java_home_is_usable; then
+if ! java_home_is_usable && ! path_java_is_usable; then
   echo "Java 17+ is required. Set JAVA_HOME to a JDK 17 or newer installation." >&2
   exit 1
 fi
