@@ -3,7 +3,7 @@
     <name>TomlJump</name>
     <vendor>TomlJump</vendor>
     <description><![CDATA[
-        Navigation from TOML string references to files and code symbols.
+        Navigation from TOML string file-path references to project files.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>

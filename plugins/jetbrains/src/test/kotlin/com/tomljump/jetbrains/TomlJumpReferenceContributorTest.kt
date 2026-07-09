@@ -23,6 +23,22 @@ class TomlJumpReferenceContributorTest : BasePlatformTestCase() {
         assertEquals("user.json", resolved.containingFile.name)
     }
 
+    fun testResolvesRelativeFilePathFromUppercaseTomlExtension() {
+        myFixture.addFileToProject("schemas/user.json", """{"type":"object"}""")
+        myFixture.configureByText(
+            "APP.TOML",
+            """
+            schema = "./sche<caret>mas/user.json"
+            """.trimIndent(),
+        )
+
+        val reference = referenceAtCaret()
+        val resolved = reference?.resolve() ?: error("Expected reference to resolve")
+
+        assertNotNull(reference)
+        assertEquals("user.json", resolved.containingFile.name)
+    }
+
     fun testDoesNotCreateReferenceForArbitraryProseString() {
         myFixture.configureByText(
             "app.toml",

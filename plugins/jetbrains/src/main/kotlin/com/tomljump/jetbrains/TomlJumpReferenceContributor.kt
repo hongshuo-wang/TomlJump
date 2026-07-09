@@ -51,7 +51,7 @@ class TomlJumpReferenceContributor : PsiReferenceContributor() {
         val file = element.containingFile ?: return false
         val virtualFile = file.virtualFile
         return when {
-            virtualFile != null -> virtualFile.extension == "toml"
+            virtualFile != null -> virtualFile.extension.equals("toml", ignoreCase = true)
             else -> file.name.endsWith(".toml", ignoreCase = true)
         }
     }

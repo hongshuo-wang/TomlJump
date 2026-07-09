@@ -10,14 +10,15 @@ Project shape:
 - `docs/publishing`: release and packaging notes
 
 Commands:
-- Run all checks: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew check`
-- Core tests: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :core:tomljump-core:test`
-- JetBrains tests: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :plugins:jetbrains:test`
-- Build plugin: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :plugins:jetbrains:buildPlugin`
+- Full JetBrains verification: `./scripts/verify/jetbrains.sh`
+- Core tests: `./gradlew :core:tomljump-core:test`
+- JetBrains tests: `./gradlew :plugins:jetbrains:test`
+- Build plugin: `./gradlew :plugins:jetbrains:buildPlugin`
 
 Notes:
-- The local shell JVM may default to Java 8, so use the Java 17-prefixed Gradle commands above when building or testing.
+- The verification script requires Java 17 or newer and works around stale `JAVA_HOME` values when a usable Java is available on `PATH` or in common macOS locations.
 - JetBrains `BasePlatformTestCase` tests require JUnit 3/4 discovery, so the JetBrains module intentionally does not use JUnit Platform for its `test` task.
+- The current JetBrains MVP publishes file-path references only. Symbol-shaped strings are classified in core but not exposed as PSI references until language-specific resolvers exist.
 
 Rules:
 - Do not implement TOML formatting, syntax highlighting, or schema validation here.
