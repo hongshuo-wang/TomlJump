@@ -43,6 +43,71 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("BaseURL"), targets.map { it.text })
     }
 
+    fun testPythonResolverFindsAnnotatedField() {
+        myFixture.addFileToProject(
+            "config.py",
+            """
+            from dataclasses import dataclass
+
+            @dataclass
+            class OpenAIConfig:
+                api_key: str
+            """.trimIndent(),
+        )
+
+        val targets = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
+
+        assertEquals(listOf("api_key"), targets.map { it.text })
+    }
+
+    fun testJavaResolverFindsJsonPropertyAnnotation() {
+        myFixture.addFileToProject(
+            "OpenAIConfig.java",
+            """
+            package config;
+
+            class OpenAIConfig {
+                @JsonProperty("api_key")
+                private String apiKey;
+            }
+            """.trimIndent(),
+        )
+
+        val targets = JavaConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
+
+        assertEquals(listOf("apiKey"), targets.map { it.text })
+    }
+
+    fun testTypeScriptResolverFindsInterfaceProperty() {
+        myFixture.addFileToProject(
+            "config.ts",
+            """
+            interface OpenAIConfig {
+                apiKey: string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = TypeScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
+
+        assertEquals(listOf("apiKey"), targets.map { it.text })
+    }
+
+    fun testJavaScriptResolverFindsQuotedObjectProperty() {
+        myFixture.addFileToProject(
+            "config.js",
+            """
+            const openai = {
+                "api_key": ""
+            }
+            """.trimIndent(),
+        )
+
+        val targets = JavaScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
+
+        assertEquals(listOf("api_key"), targets.map { it.text.trim('"') })
+    }
+
     fun testTargetResolverRethrowsProcessCanceledException() {
         myFixture.configureByText("app.toml", "[openai]")
         val resolver = TomlConfigTargetResolver(
