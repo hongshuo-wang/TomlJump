@@ -7,10 +7,9 @@ import com.intellij.psi.PsiElement
 import com.tomljump.core.ConfigKeyPath
 import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class LanguageConfigResolverTest : BasePlatformTestCase() {
-    fun testTemporaryGoResolverReturnsNoTargets() {
+    fun testGoResolverFindsTomlTag() {
         myFixture.addFileToProject(
             "config.go",
             """
@@ -24,7 +23,24 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
 
         val targets = GoConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
 
-        assertTrue(targets.isEmpty())
+        assertEquals(listOf("APIKey"), targets.map { it.text })
+    }
+
+    fun testGoResolverFindsNormalizedFieldName() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type OpenAIConfig struct {
+                BaseURL string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "base_url"))
+
+        assertEquals(listOf("BaseURL"), targets.map { it.text })
     }
 
     fun testTargetResolverRethrowsProcessCanceledException() {
