@@ -11,5 +11,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <psi.referenceContributor implementation="com.tomljump.jetbrains.TomlJumpReferenceContributor"/>
+        <psi.referenceContributor implementation="com.tomljump.jetbrains.config.TomlConfigReferenceContributor"/>
     </extensions>
 </idea-plugin>
