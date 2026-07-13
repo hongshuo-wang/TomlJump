@@ -61,6 +61,30 @@ class TomlConfigReferenceContributorTest : BasePlatformTestCase() {
         assertEquals("APIKey", resolved?.text)
     }
 
+    fun testResolvesTomlTableToGoStructType() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type OpenAIConfig struct {
+                APIKey string `toml:"api_key"`
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [ope<caret>nai]
+            api_key = "secret"
+            """.trimIndent(),
+        )
+
+        val resolved = referenceAtCaret()?.resolve()
+
+        assertEquals("OpenAIConfig", resolved?.text)
+    }
+
     fun testDoesNotCreateReferenceInNonTomlFile() {
         myFixture.configureByText(
             "config.txt",

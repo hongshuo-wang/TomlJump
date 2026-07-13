@@ -43,6 +43,23 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("BaseURL"), targets.map { it.text })
     }
 
+    fun testGoResolverFindsStructTypeForTable() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type OpenAIConfig struct {
+                APIKey string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
+
+        assertEquals(listOf("OpenAIConfig"), targets.map { it.text })
+    }
+
     fun testPythonResolverFindsAnnotatedField() {
         myFixture.addFileToProject(
             "config.py",
@@ -58,6 +75,20 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val targets = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
 
         assertEquals(listOf("api_key"), targets.map { it.text })
+    }
+
+    fun testPythonResolverFindsClassForTable() {
+        myFixture.addFileToProject(
+            "config.py",
+            """
+            class OpenAIConfig:
+                api_key: str
+            """.trimIndent(),
+        )
+
+        val targets = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
+
+        assertEquals(listOf("OpenAIConfig"), targets.map { it.text })
     }
 
     fun testJavaResolverFindsJsonPropertyAnnotation() {
@@ -78,6 +109,23 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("apiKey"), targets.map { it.text })
     }
 
+    fun testJavaResolverFindsClassForTable() {
+        myFixture.addFileToProject(
+            "OpenAIConfig.java",
+            """
+            package config;
+
+            class OpenAIConfig {
+                private String apiKey;
+            }
+            """.trimIndent(),
+        )
+
+        val targets = JavaConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
+
+        assertEquals(listOf("OpenAIConfig"), targets.map { it.text })
+    }
+
     fun testTypeScriptResolverFindsInterfaceProperty() {
         myFixture.addFileToProject(
             "config.ts",
@@ -93,6 +141,21 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("apiKey"), targets.map { it.text })
     }
 
+    fun testTypeScriptResolverFindsInterfaceForTable() {
+        myFixture.addFileToProject(
+            "config.ts",
+            """
+            interface OpenAIConfig {
+                apiKey: string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = TypeScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
+
+        assertEquals(listOf("OpenAIConfig"), targets.map { it.text })
+    }
+
     fun testJavaScriptResolverFindsQuotedObjectProperty() {
         myFixture.addFileToProject(
             "config.js",
@@ -106,6 +169,21 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val targets = JavaScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
 
         assertEquals(listOf("api_key"), targets.map { it.text.trim('"') })
+    }
+
+    fun testJavaScriptResolverFindsObjectForTable() {
+        myFixture.addFileToProject(
+            "config.js",
+            """
+            const openaiConfig = {
+                "api_key": ""
+            }
+            """.trimIndent(),
+        )
+
+        val targets = JavaScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
+
+        assertEquals(listOf("openaiConfig"), targets.map { it.text })
     }
 
     fun testTargetResolverRethrowsProcessCanceledException() {
