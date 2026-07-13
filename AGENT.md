@@ -18,7 +18,8 @@ Commands:
 Notes:
 - The verification script requires Java 17 or newer and works around stale `JAVA_HOME` values when a usable Java is available on `PATH` or in common macOS locations.
 - JetBrains `BasePlatformTestCase` tests require JUnit 3/4 discovery, so the JetBrains module intentionally does not use JUnit Platform for its `test` task.
-- The current JetBrains MVP publishes file-path references only. Symbol-shaped strings are classified in core but not exposed as PSI references until language-specific resolvers exist.
+- The JetBrains plugin supports TOML string file-path navigation and TOML table/key navigation to high-confidence config declarations in Go, Python, Java, TypeScript, and JavaScript source files.
+- Config key navigation intentionally uses optional resolver adapters so missing language plugins do not prevent plugin startup.
 
 Rules:
 - Do not implement TOML formatting, syntax highlighting, or schema validation here.

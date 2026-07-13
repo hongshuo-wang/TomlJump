@@ -1,7 +1,7 @@
 # TODO
 
 ## Advanced Navigation
-- Go struct tag mapping
+- Deeper Go struct graph traversal for nested TOML table paths
 - Python `pyproject.toml` entry point navigation
 - TypeScript `tsconfig.json` path alias resolution
 - Java Spring/framework config mapping
