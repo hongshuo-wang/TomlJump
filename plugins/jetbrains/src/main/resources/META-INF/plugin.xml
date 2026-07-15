@@ -35,17 +35,13 @@
     ]]></description>
     <change-notes><![CDATA[
         <ul>
-            <li>初始 JetBrains 插件版本。</li>
-            <li>新增 TOML 字符串文件路径跳转。</li>
-            <li>新增 TOML table/key 到源码配置声明的跳转。</li>
-            <li>新增 Go、Python、Java、TypeScript、JavaScript 的保守配置匹配。</li>
+            <li>修复 TOML table 内同名 key 跨语言跳到错误目标的问题。</li>
+            <li>提升 Python、Java、TypeScript、JavaScript 配置字段跳转的定位精度。</li>
         </ul>
         <hr/>
         <ul>
-            <li>Initial JetBrains plugin release.</li>
-            <li>Added TOML string file-path navigation.</li>
-            <li>Added TOML table/key navigation to source config declarations.</li>
-            <li>Added conservative Go, Python, Java, TypeScript, and JavaScript config matching.</li>
+            <li>Fixed cross-language misnavigation for same-named TOML keys inside tables.</li>
+            <li>Improved target offsets for Python, Java, TypeScript, and JavaScript config fields.</li>
         </ul>
     ]]></change-notes>
 
