@@ -18,34 +18,71 @@ java_major() {
 java_home_is_usable() {
   [[ -n "${JAVA_HOME:-}" ]] &&
     [[ -x "${JAVA_HOME}/bin/java" ]] &&
-    [[ "$(java_major "${JAVA_HOME}/bin/java")" -ge 17 ]]
+    [[ "$(java_major "${JAVA_HOME}/bin/java")" -ge 21 ]]
 }
 
 path_java_is_usable() {
   command -v java >/dev/null 2>&1 &&
-    [[ "$(java_major "$(command -v java)")" -ge 17 ]]
+    [[ "$(java_major "$(command -v java)")" -ge 21 ]]
 }
 
-if ! java_home_is_usable && path_java_is_usable; then
-  unset JAVA_HOME
-fi
+candidate_java_homes() {
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    printf '%s\n' "${JAVA_HOME}"
+  fi
 
-if ! java_home_is_usable && ! path_java_is_usable; then
-  if [[ -x "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin/java" ]]; then
-    export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-  elif command -v /usr/libexec/java_home >/dev/null 2>&1; then
-    export JAVA_HOME="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
+  printf '%s\n' \
+    "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home" \
+    "/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home" \
+    "/usr/lib/jvm/temurin-21-jdk" \
+    "/usr/lib/jvm/java-21-openjdk" \
+    "/usr/lib/jvm/java-21-openjdk-amd64" \
+    "/usr/lib/jvm/jdk-21"
+
+  if command -v /usr/libexec/java_home >/dev/null 2>&1; then
+    /usr/libexec/java_home -v 21 2>/dev/null || true
+  fi
+}
+
+find_java_21_home() {
+  local candidate
+  while IFS= read -r candidate; do
+    [[ -n "${candidate}" ]] || continue
+    [[ -x "${candidate}/bin/java" ]] || continue
+    [[ "$(java_major "${candidate}/bin/java")" -ge 21 ]] || continue
+    printf '%s\n' "${candidate}"
+    return 0
+  done < <(candidate_java_homes)
+
+  return 1
+}
+
+if ! java_home_is_usable; then
+  discovered_java_home="$(find_java_21_home || true)"
+  if [[ -n "${discovered_java_home}" ]]; then
+    export JAVA_HOME="${discovered_java_home}"
+  elif path_java_is_usable; then
+    unset JAVA_HOME
   fi
 fi
 
 if ! java_home_is_usable && ! path_java_is_usable; then
-  echo "Java 17+ is required. Set JAVA_HOME to a JDK 17 or newer installation." >&2
+  echo "Java 21+ is required but was not found automatically." >&2
+  echo "Install JDK 21, or set JAVA_HOME to a JDK 21+ installation and rerun this script." >&2
   exit 1
+fi
+
+if java_home_is_usable; then
+  echo "Using Java $(java_major "${JAVA_HOME}/bin/java") from JAVA_HOME=${JAVA_HOME}"
+else
+  echo "Using Java $(java_major "$(command -v java)") from PATH: $(command -v java)"
 fi
 
 export GRADLE_USER_HOME="${GRADLE_USER_HOME:-/tmp/tomljump-gradle-home}"
 
 cd "${repo_root}"
+
+rm -rf "${GRADLE_USER_HOME}/caches/8.10.2/transforms"
 
 ./gradlew :core:tomljump-core:test
 ./gradlew :plugins:jetbrains:test
