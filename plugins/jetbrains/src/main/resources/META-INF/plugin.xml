@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.tomljump</id>
     <name>TomlJump</name>
-    <vendor url="https://github.com/hongshuo-wang/TomlJump">hongshuo_wang</vendor>
+    <vendor url="https://github.com/hongshuo-wang/TomlJump">harrison_wang</vendor>
     <description><![CDATA[
         <p>
             TomlJump 为 TOML 配置提供专注的跳转能力，可以从配置快速跳到对应的项目文件和源码声明。

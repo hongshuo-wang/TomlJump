@@ -83,7 +83,7 @@ intellijPlatform {
         changeNotes = pluginChangeNotes
 
         vendor {
-            name = "hongshuo_wang"
+            name = "harrison_wang"
             url = "https://github.com/hongshuo-wang/TomlJump"
         }
 

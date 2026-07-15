@@ -77,6 +77,22 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("api_key"), targets.map { it.text })
     }
 
+    fun testPythonResolverNavigationElementKeepsFieldOffset() {
+        val file = myFixture.addFileToProject(
+            "config.py",
+            """
+            class OpenAIConfig:
+                api_key: str
+            """.trimIndent(),
+        )
+        val expectedOffset = file.text.indexOf("api_key")
+
+        val target = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key")).single()
+
+        assertEquals(expectedOffset, target.textOffset)
+        assertEquals(expectedOffset, target.navigationElement.textOffset)
+    }
+
     fun testPythonResolverFindsClassForTable() {
         myFixture.addFileToProject(
             "config.py",
@@ -107,6 +123,26 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val targets = JavaConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
 
         assertEquals(listOf("apiKey"), targets.map { it.text })
+    }
+
+    fun testJavaResolverNavigationElementKeepsFieldOffset() {
+        val file = myFixture.addFileToProject(
+            "OpenAIConfig.java",
+            """
+            package config;
+
+            class OpenAIConfig {
+                @JsonProperty("api_key")
+                private String apiKey;
+            }
+            """.trimIndent(),
+        )
+        val expectedOffset = file.text.indexOf("apiKey")
+
+        val target = JavaConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key")).single()
+
+        assertEquals(expectedOffset, target.textOffset)
+        assertEquals(expectedOffset, target.navigationElement.textOffset)
     }
 
     fun testJavaResolverFindsClassForTable() {
@@ -141,6 +177,23 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("apiKey"), targets.map { it.text })
     }
 
+    fun testTypeScriptResolverNavigationElementKeepsPropertyOffset() {
+        val file = myFixture.addFileToProject(
+            "config.ts",
+            """
+            interface OpenAIConfig {
+                apiKey: string
+            }
+            """.trimIndent(),
+        )
+        val expectedOffset = file.text.indexOf("apiKey")
+
+        val target = TypeScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key")).single()
+
+        assertEquals(expectedOffset, target.textOffset)
+        assertEquals(expectedOffset, target.navigationElement.textOffset)
+    }
+
     fun testTypeScriptResolverFindsInterfaceForTable() {
         myFixture.addFileToProject(
             "config.ts",
@@ -169,6 +222,23 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val targets = JavaScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key"))
 
         assertEquals(listOf("api_key"), targets.map { it.text.trim('"') })
+    }
+
+    fun testJavaScriptResolverNavigationElementKeepsPropertyOffset() {
+        val file = myFixture.addFileToProject(
+            "config.js",
+            """
+            const openai = {
+                "api_key": ""
+            }
+            """.trimIndent(),
+        )
+        val expectedOffset = file.text.indexOf("api_key")
+
+        val target = JavaScriptConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "api_key")).single()
+
+        assertEquals(expectedOffset, target.textOffset)
+        assertEquals(expectedOffset, target.navigationElement.textOffset)
     }
 
     fun testJavaScriptResolverFindsObjectForTable() {
@@ -201,6 +271,51 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertFailsWith<ProcessCanceledException> {
             resolver.resolve(myFixture.file, ConfigKeyPath.of("openai"))
         }
+    }
+
+    fun testTargetResolverPrefersTargetsInFileContainingMatchingTableTarget() {
+        myFixture.addFileToProject(
+            "go/config.go",
+            """
+            package config
+
+            type GoServiceConfig struct {
+                Schema string `toml:"schema"`
+            }
+            """.trimIndent(),
+        )
+        myFixture.addFileToProject(
+            "typescript/config.ts",
+            """
+            export interface TypeScriptServiceConfig {
+                schema: string
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText("app.toml", "[typescript_service]\nschema = \"./schemas/user.json\"")
+
+        val targets = TomlConfigTargetResolver().resolve(myFixture.file, ConfigKeyPath.of("typescript_service", "schema"))
+
+        assertEquals(listOf(true), targets.map { it.containingFile.virtualFile.path.endsWith("/typescript/config.ts") })
+        assertEquals(listOf("schema"), targets.map { it.text })
+    }
+
+    fun testTargetResolverFallsBackWhenNoMatchingTableTargetExists() {
+        myFixture.addFileToProject(
+            "go/config.go",
+            """
+            package config
+
+            type AppConfig struct {
+                Schema string `toml:"schema"`
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText("app.toml", "[unknown]\nschema = \"./schemas/user.json\"")
+
+        val targets = TomlConfigTargetResolver().resolve(myFixture.file, ConfigKeyPath.of("unknown", "schema"))
+
+        assertEquals(listOf("Schema"), targets.map { it.text })
     }
 
     fun testSourcePatternResolverIgnoresInvalidOffsetsAndDeduplicatesTargets() {

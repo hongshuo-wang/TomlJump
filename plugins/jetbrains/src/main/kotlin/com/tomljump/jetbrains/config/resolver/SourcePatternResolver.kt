@@ -41,7 +41,7 @@ abstract class SourcePatternResolver(
                             if (element.text == target.label) {
                                 element
                             } else {
-                                ConfigSourcePsiElement(psiFile, target, element)
+                                ConfigSourcePsiElement(psiFile, target)
                             }
                         }
                     }.asSequence()

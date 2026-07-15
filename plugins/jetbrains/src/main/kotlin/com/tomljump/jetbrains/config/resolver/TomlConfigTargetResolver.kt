@@ -2,6 +2,7 @@ package com.tomljump.jetbrains.config.resolver
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.tomljump.core.ConfigKeyPath
 
@@ -16,6 +17,11 @@ class TomlConfigTargetResolver(
 ) {
     fun resolve(element: PsiElement, keyPath: ConfigKeyPath): List<PsiElement> {
         val project = element.project
+        val candidates = resolveAll(project, keyPath)
+        return preferTargetsInMatchingContainer(project, keyPath, candidates).distinctBy(::dedupeKey)
+    }
+
+    private fun resolveAll(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
         return resolvers.flatMap { resolver ->
             try {
                 resolver.resolve(project, keyPath)
@@ -25,7 +31,25 @@ class TomlConfigTargetResolver(
                 logger.debug("TomlJump config resolver failed for ${keyPath.display}", error)
                 emptyList()
             }
-        }.distinctBy(::dedupeKey)
+        }
+    }
+
+    private fun preferTargetsInMatchingContainer(
+        project: Project,
+        keyPath: ConfigKeyPath,
+        candidates: List<PsiElement>,
+    ): List<PsiElement> {
+        if (keyPath.segments.size <= 1 || candidates.isEmpty()) return candidates
+
+        val containerKeyPath = ConfigKeyPath.from(keyPath.segments.dropLast(1))
+        val containerFiles = resolveAll(project, containerKeyPath)
+            .mapNotNull { it.containingFile?.virtualFile?.path }
+            .toSet()
+        if (containerFiles.isEmpty()) return candidates
+
+        return candidates.filter { candidate ->
+            candidate.containingFile?.virtualFile?.path in containerFiles
+        }
     }
 
     companion object {
