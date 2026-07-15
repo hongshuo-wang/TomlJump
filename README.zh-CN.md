@@ -104,6 +104,10 @@ plugins/jetbrains/build/distributions/
 ./scripts/verify/jetbrains.sh
 ```
 
+## 社区讨论
+
+欢迎到 [Linux DO](https://linux.do/) 社区交流 TomlJump 的使用反馈、问题和想法。
+
 ## 许可证
 
 TomlJump 使用 MIT 许可证发布，详见 [LICENSE](LICENSE)。

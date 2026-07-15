@@ -104,6 +104,10 @@ Useful commands:
 ./scripts/verify/jetbrains.sh
 ```
 
+## Community
+
+You are welcome to discuss TomlJump usage feedback, questions, and ideas in the [Linux DO](https://linux.do/) community.
+
 ## License
 
 TomlJump is released under the MIT License. See [LICENSE](LICENSE).
