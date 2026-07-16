@@ -1,9 +1,10 @@
 package com.tomljump.jetbrains.config.resolver
 
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FilenameIndex
@@ -14,9 +15,9 @@ abstract class SourcePatternResolver(
     private val extensions: Set<String>,
 ) : LanguageConfigResolver {
     final override fun resolve(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
-        return ReadAction.compute<List<PsiElement>, RuntimeException> {
-            resolveInReadAction(project, keyPath)
-        }
+        return ApplicationManager.getApplication().runReadAction(
+            Computable { resolveInReadAction(project, keyPath) },
+        )
     }
 
     private fun resolveInReadAction(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
