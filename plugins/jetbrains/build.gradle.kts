@@ -37,13 +37,13 @@ val pluginDescription = """
 
 val pluginChangeNotes = """
     <ul>
-        <li>修复 TOML table 内同名 key 跨语言跳到错误目标的问题。</li>
-        <li>提升 Python、Java、TypeScript、JavaScript 配置字段跳转的定位精度。</li>
+        <li>更新 JetBrains read-action API 用法，提升与当前 IntelliJ Platform 的兼容性。</li>
+        <li>新增 Linux DO 社区讨论入口。</li>
     </ul>
     <hr/>
     <ul>
-        <li>Fixed cross-language misnavigation for same-named TOML keys inside tables.</li>
-        <li>Improved target offsets for Python, Java, TypeScript, and JavaScript config fields.</li>
+        <li>Updated JetBrains read-action API usage for compatibility with the current IntelliJ Platform.</li>
+        <li>Added a Linux DO community discussion link.</li>
     </ul>
 """.trimIndent()
 
