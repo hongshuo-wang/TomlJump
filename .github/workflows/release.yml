@@ -44,6 +44,16 @@ jobs:
       - name: Build plugin ZIP
         run: ./gradlew :plugins:jetbrains:buildPlugin -PpluginVersion="${{ steps.release.outputs.version }}"
 
+      - name: Publish plugin to JetBrains Marketplace
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          JETBRAINS_CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
+          JETBRAINS_PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
+          JETBRAINS_PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
+        run: >
+          ./gradlew :plugins:jetbrains:publishPlugin
+          -PpluginVersion="${{ steps.release.outputs.version }}"
+
       - name: Locate plugin ZIP
         id: artifact
         shell: bash
