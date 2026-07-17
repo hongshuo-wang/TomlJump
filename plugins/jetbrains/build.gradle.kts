@@ -1,3 +1,7 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.SignPluginTask
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+
 plugins {
     kotlin("jvm")
     id("org.jetbrains.intellij.platform")
@@ -48,6 +52,13 @@ val pluginChangeNotes = """
         <li>Strengthened conservative, owner-aware matching to reject false declarations in local variables, nested properties, comments, and strings while staying quiet for uncertain relationships.</li>
     </ul>
 """.trimIndent()
+
+val verifierIdeType = providers.gradleProperty("verifierIde")
+    .orElse("IC")
+    .map(IntelliJPlatformType::fromCode)
+val verifierIdeVersion = providers.gradleProperty("verifierIdeVersion")
+    .orElse("2024.3")
+val externalPluginArchive = providers.gradleProperty("pluginArchivePath")
 
 kotlin {
     jvmToolchain(21)
@@ -107,5 +118,23 @@ intellijPlatform {
         channels = providers.environmentVariable("JETBRAINS_MARKETPLACE_CHANNEL")
             .map { listOf(it) }
             .orElse(listOf("default"))
+    }
+
+    pluginVerification {
+        ides {
+            create(verifierIdeType, verifierIdeVersion)
+        }
+    }
+}
+
+tasks.named<VerifyPluginTask>("verifyPlugin") {
+    if (externalPluginArchive.isPresent) {
+        archiveFile.set(rootProject.layout.projectDirectory.file(externalPluginArchive.get()))
+    }
+}
+
+tasks.named<SignPluginTask>("signPlugin") {
+    if (externalPluginArchive.isPresent) {
+        archiveFile.set(rootProject.layout.projectDirectory.file(externalPluginArchive.get()))
     }
 }

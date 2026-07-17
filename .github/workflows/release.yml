@@ -1,17 +1,20 @@
 name: Release
 
 "on":
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  jetbrains-plugin:
-    name: Build and publish JetBrains plugin ZIP
+  build:
+    name: Run tests and build plugin ZIP
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
 
     steps:
       - name: Check out repository
@@ -25,40 +28,39 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Derive release version from tag
+      - name: Resolve plugin version
         id: release
         shell: bash
         run: |
-          tag="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME}"
+            if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+              echo "Release tags must look like v0.1.0 or v0.1.0-beta.1, got ${tag}" >&2
+              exit 1
+            fi
+            version="${tag#v}"
+          else
+            version="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
+          fi
 
-          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Release tags must look like v0.1.0 or v0.1.0-beta.1, got ${tag}" >&2
+          if [[ -z "${version}" ]]; then
+            echo "Could not resolve plugin version" >&2
             exit 1
           fi
 
-          version="${tag#v}"
-          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          echo "Building TomlJump ${version} from ${tag}"
+          echo "Building TomlJump ${version}"
 
-      - name: Build plugin ZIP
-        run: ./gradlew :plugins:jetbrains:buildPlugin -PpluginVersion="${{ steps.release.outputs.version }}"
-
-      - name: Publish plugin to JetBrains Marketplace
+      - name: Run core tests, JetBrains tests, and plugin build
         env:
-          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
-          JETBRAINS_CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
-          JETBRAINS_PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
-          JETBRAINS_PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
-        run: >
-          ./gradlew :plugins:jetbrains:publishPlugin
-          -PpluginVersion="${{ steps.release.outputs.version }}"
+          ORG_GRADLE_PROJECT_pluginVersion: ${{ steps.release.outputs.version }}
+        run: ./scripts/verify/jetbrains.sh
 
       - name: Locate plugin ZIP
         id: artifact
         shell: bash
         run: |
-          zip_path="$(find plugins/jetbrains/build/distributions -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
+          zip_path="$(find plugins/jetbrains/build/distributions -maxdepth 1 -type f -name '*-${{ steps.release.outputs.version }}.zip' | sort | head -n 1)"
 
           if [[ -z "${zip_path}" ]]; then
             echo "No ZIP found under plugins/jetbrains/build/distributions" >&2
@@ -69,18 +71,155 @@ jobs:
           echo "zip_name=$(basename "${zip_path}")" >> "${GITHUB_OUTPUT}"
           echo "Located ${zip_path}"
 
-      - name: Upload workflow artifact
+      - name: Upload unsigned plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.artifact.outputs.zip_name }}
+          name: tomljump-plugin-unsigned
           path: ${{ steps.artifact.outputs.zip_path }}
           if-no-files-found: error
 
-      - name: Create GitHub release and upload ZIP
+  compatibility:
+    name: Verify ${{ matrix.name }} compatibility
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: IntelliJ IDEA Community 2024.3
+            id: idea-2024.3
+            type: IC
+            version: "2024.3"
+          - name: PyCharm 2024.3
+            id: pycharm-2024.3
+            type: PY
+            version: "2024.3"
+          - name: GoLand 2024.3
+            id: goland-2024.3
+            type: GO
+            version: "2024.3"
+          - name: WebStorm 2024.3
+            id: webstorm-2024.3
+            type: WS
+            version: "2024.3"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download unsigned plugin artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tomljump-plugin-unsigned
+          path: verified-plugin
+
+      - name: Locate unsigned plugin ZIP
+        id: artifact
+        shell: bash
+        run: |
+          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
+          if [[ -z "${zip_path}" ]]; then
+            echo "No downloaded plugin ZIP found" >&2
+            exit 1
+          fi
+          echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run JetBrains Plugin Verifier
+        run: >
+          ./gradlew :plugins:jetbrains:verifyPlugin -x buildPlugin
+          -PpluginVersion="${{ needs.build.outputs.version }}"
+          -PpluginArchivePath="${{ steps.artifact.outputs.zip_path }}"
+          -PverifierIde="${{ matrix.type }}"
+          -PverifierIdeVersion="${{ matrix.version }}"
+
+      - name: Upload Plugin Verifier report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-verifier-${{ matrix.id }}
+          path: plugins/jetbrains/build/reports/pluginVerifier/
+          if-no-files-found: ignore
+
+  publish:
+    name: Sign and publish verified plugin ZIP
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+      - compatibility
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download verified plugin artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tomljump-plugin-unsigned
+          path: verified-plugin
+
+      - name: Locate verified plugin ZIP
+        id: artifact
+        shell: bash
+        run: |
+          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
+          if [[ -z "${zip_path}" ]]; then
+            echo "No verified plugin ZIP found" >&2
+            exit 1
+          fi
+          echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Sign and publish plugin to JetBrains Marketplace
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          JETBRAINS_CERTIFICATE_CHAIN: ${{ secrets.JETBRAINS_CERTIFICATE_CHAIN }}
+          JETBRAINS_PRIVATE_KEY: ${{ secrets.JETBRAINS_PRIVATE_KEY }}
+          JETBRAINS_PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
+        run: >
+          ./gradlew :plugins:jetbrains:publishPlugin -x buildPlugin
+          -PpluginVersion="${{ needs.build.outputs.version }}"
+          -PpluginArchivePath="${{ steps.artifact.outputs.zip_path }}"
+
+      - name: Locate signed plugin ZIP
+        id: signed
+        shell: bash
+        run: |
+          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*-signed.zip' | sort | head -n 1)"
+          if [[ -z "${zip_path}" ]]; then
+            echo "No signed plugin ZIP found" >&2
+            exit 1
+          fi
+          echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
+          echo "zip_name=$(basename "${zip_path}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload signed workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.signed.outputs.zip_name }}
+          path: ${{ steps.signed.outputs.zip_path }}
+          if-no-files-found: error
+
+      - name: Create GitHub release and upload signed ZIP
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-          ZIP_PATH: ${{ steps.artifact.outputs.zip_path }}
+          TAG: ${{ github.ref_name }}
+          ZIP_PATH: ${{ steps.signed.outputs.zip_path }}
         shell: bash
         run: |
           if gh release view "${TAG}" >/dev/null 2>&1; then

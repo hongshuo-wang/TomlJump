@@ -55,6 +55,10 @@ If TomlJump is available in JetBrains Marketplace, install it from your IDE:
 3. Search for `TomlJump`.
 4. Install the plugin and restart the IDE if prompted.
 
+### Compatibility
+
+TomlJump targets JetBrains IDEs on platform build 243 (2024.3) and later. Each release is checked with JetBrains Plugin Verifier against the 2024.3 baseline for IntelliJ IDEA Community, PyCharm, GoLand, and WebStorm before publication.
+
 ### Build From Source
 
 Requirements:
