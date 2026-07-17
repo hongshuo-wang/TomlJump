@@ -18,12 +18,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -72,7 +72,7 @@ jobs:
           echo "Located ${zip_path}"
 
       - name: Upload unsigned plugin artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tomljump-plugin-unsigned
           path: ${{ steps.artifact.outputs.zip_path }}
@@ -105,16 +105,16 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Download unsigned plugin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tomljump-plugin-unsigned
           path: verified-plugin
@@ -140,7 +140,7 @@ jobs:
 
       - name: Upload Plugin Verifier report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plugin-verifier-${{ matrix.id }}
           path: plugins/jetbrains/build/reports/pluginVerifier/
@@ -158,18 +158,18 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Download verified plugin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tomljump-plugin-unsigned
           path: verified-plugin
@@ -209,7 +209,7 @@ jobs:
           echo "zip_name=$(basename "${zip_path}")" >> "${GITHUB_OUTPUT}"
 
       - name: Upload signed workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.signed.outputs.zip_name }}
           path: ${{ steps.signed.outputs.zip_path }}
