@@ -1,0 +1,24 @@
+# Bidirectional manual navigation samples for TomlJump.
+# Test TOML -> source here, then open each source file to test source -> TOML.
+# Use Go to Declaration or command/control click in either direction.
+
+# CASE 1 - Unique high-confidence target: jump directly without an extra chooser.
+[go_service]
+go_token = "go-secret"
+schema = "./schemas/user.json"
+
+[python_service]
+python_token = "python-secret"
+schema = "./schemas/user.json"
+
+[java_service]
+java_token = "java-secret"
+schema = "./schemas/user.json"
+
+[typescript_service]
+typescript_token = "typescript-secret"
+schema = "./schemas/user.json"
+
+[javascript_service]
+javascript_token = "javascript-secret"
+schema = "./schemas/user.json"

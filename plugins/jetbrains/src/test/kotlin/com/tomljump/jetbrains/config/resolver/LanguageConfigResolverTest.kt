@@ -7,8 +7,39 @@ import com.intellij.psi.PsiElement
 import com.tomljump.core.ConfigKeyPath
 import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class LanguageConfigResolverTest : BasePlatformTestCase() {
+    fun testGoResolverExposesConfigDeclarationsForReverseNavigation() {
+        val source = """
+            package config
+
+            type OpenAIConfig struct {
+                APIKey string `toml:"api_key" json:"apiKey"`
+            }
+        """.trimIndent()
+
+        val declarations = GoConfigResolver().declarationsIn(source)
+
+        val container = declarations.single { it.label == "OpenAIConfig" }
+        assertEquals(ConfigSourceDeclarationKind.CONTAINER, container.kind)
+        assertTrue(container.aliases.isEmpty())
+
+        val field = declarations.single { it.label == "APIKey" }
+        assertEquals(ConfigSourceDeclarationKind.FIELD, field.kind)
+        assertEquals(setOf("api_key", "apiKey"), field.aliases)
+    }
+
+    fun testSourceResolverReportsSupportedFileExtensions() {
+        val resolver = TypeScriptConfigResolver()
+
+        assertTrue(resolver.supportsExtension("ts"))
+        assertTrue(resolver.supportsExtension("TSX"))
+        assertFalse(resolver.supportsExtension("js"))
+        assertFalse(resolver.supportsExtension(null))
+    }
+
     fun testGoResolverFindsTomlTag() {
         myFixture.addFileToProject(
             "config.go",
@@ -105,6 +136,22 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val targets = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai"))
 
         assertEquals(listOf("OpenAIConfig"), targets.map { it.text })
+    }
+
+    fun testPythonResolverFindsFieldAfterMultilineClassHeader() {
+        myFixture.addFileToProject(
+            "config.py",
+            """
+            class OpenAIConfig(
+                BaseSettings,
+            ):
+                model: str
+            """.trimIndent(),
+        )
+
+        val targets = PythonConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("openai", "model"))
+
+        assertEquals(listOf("model"), targets.map { it.text })
     }
 
     fun testJavaResolverFindsJsonPropertyAnnotation() {
@@ -300,7 +347,7 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("schema"), targets.map { it.text })
     }
 
-    fun testTargetResolverFallsBackWhenNoMatchingTableTargetExists() {
+    fun testTargetResolverStaysUnresolvedWhenNoMatchingTableTargetExists() {
         myFixture.addFileToProject(
             "go/config.go",
             """
@@ -315,7 +362,28 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
 
         val targets = TomlConfigTargetResolver().resolve(myFixture.file, ConfigKeyPath.of("unknown", "schema"))
 
-        assertEquals(listOf("Schema"), targets.map { it.text })
+        assertTrue(targets.isEmpty())
+    }
+
+    fun testFieldResolutionUsesOwningContainerInSameFile() {
+        myFixture.addFileToProject(
+            "go/config.go",
+            """
+            package config
+
+            type OpenAIConfig struct {
+                APIKey string `toml:"api_key"`
+            }
+
+            type DatabaseConfig struct {
+                DatabaseAPIKey string `toml:"api_key"`
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(myFixture.project, ConfigKeyPath.of("database", "api_key"))
+
+        assertEquals(listOf("DatabaseAPIKey"), targets.map { it.text })
     }
 
     fun testSourcePatternResolverIgnoresInvalidOffsetsAndDeduplicatesTargets() {

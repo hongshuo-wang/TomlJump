@@ -10,10 +10,19 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.tomljump.core.ConfigKeyPath
+import com.tomljump.core.ConfigNameNormalizer
 
 abstract class SourcePatternResolver(
     private val extensions: Set<String>,
 ) : LanguageConfigResolver {
+    internal fun supportsExtension(extension: String?): Boolean {
+        return extension != null && extensions.any { it.equals(extension, ignoreCase = true) }
+    }
+
+    internal fun declarationsIn(sourceText: String): List<ConfigSourceDeclaration> {
+        return findDeclarations(sourceText).distinct()
+    }
+
     final override fun resolve(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
         return ApplicationManager.getApplication().runReadAction(
             Computable { resolveInReadAction(project, keyPath) },
@@ -51,12 +60,36 @@ abstract class SourcePatternResolver(
         }.distinctBy(::dedupeKey)
     }
 
-    /**
-     * Returns candidate declaration offsets in `sourceText`. Results may be
-     * unsorted and duplicated; `SourcePatternResolver` validates offsets and
-     * deduplicates mapped PSI targets.
-     */
-    protected abstract fun findTargets(sourceText: String, keyPath: ConfigKeyPath): List<ConfigSourceTarget>
+    protected open fun findDeclarations(sourceText: String): List<ConfigSourceDeclaration> = emptyList()
+
+    /** Results may be unsorted and duplicated; mapped PSI targets are validated and deduplicated. */
+    protected open fun findTargets(sourceText: String, keyPath: ConfigKeyPath): List<ConfigSourceTarget> {
+        val declarations = declarationsIn(sourceText)
+        if (keyPath.segments.size == 1) {
+            val containers = declarations.filter { declaration ->
+                declaration.kind == ConfigSourceDeclarationKind.CONTAINER &&
+                    ConfigSourceNameMatcher.matchesContainerName(keyPath.leaf, declaration.label)
+            }
+            if (containers.isNotEmpty()) return containers.map(ConfigSourceDeclaration::toTarget)
+        }
+
+        val fields = declarations
+            .filter { it.kind == ConfigSourceDeclarationKind.FIELD }
+            .filter { declaration ->
+                if (keyPath.segments.size <= 1) return@filter true
+                val ownerLabel = declaration.ownerLabel ?: return@filter false
+                ConfigSourceNameMatcher.matchesContainerName(
+                    keyPath.segments[keyPath.segments.lastIndex - 1],
+                    ownerLabel,
+                )
+            }
+        val aliasMatches = fields.filter { keyPath.leaf in it.aliases }
+        if (aliasMatches.isNotEmpty()) return aliasMatches.map(ConfigSourceDeclaration::toTarget)
+
+        return fields
+            .filter { ConfigNameNormalizer.matches(keyPath.leaf, it.label) }
+            .map(ConfigSourceDeclaration::toTarget)
+    }
 
     private fun targetElement(leaf: PsiElement): PsiElement {
         var current = leaf

@@ -6,3 +6,8 @@ go_handler = "handlers.UserHandler"
 ts_job = "src/jobs/sync.ts"
 js_job = "src/jobs/sync.js"
 plain_value = "hello world"
+
+[openai]
+api_key = "secret"
+model = "gpt-4.1"
+base_url = "https://api.example.com"

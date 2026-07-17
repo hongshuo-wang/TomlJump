@@ -1,0 +1,9 @@
+{
+  "title": "TomlJump navigation demo",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    }
+  }
+}
