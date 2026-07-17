@@ -5,20 +5,6 @@ plugins {
 
 val pluginDescription = """
     <p>
-        TomlJump 为 TOML 配置与对应的项目文件、源码配置声明提供专注的双向跳转能力。
-    </p>
-    <ul>
-        <li>从 TOML 字符串文件路径跳转到项目文件。</li>
-        <li>在 TOML table、key 与匹配的源码配置声明之间双向跳转。</li>
-        <li>支持 Go、Python、Java、TypeScript、JavaScript 中的保守配置匹配。</li>
-        <li>使用 JetBrains 原生跳转能力，例如 Go to Declaration 和 command/control click。</li>
-    </ul>
-    <p>
-        TomlJump 不替代 TOML 语法高亮、格式化、schema 校验或补全。它只专注于高置信度导航；
-        当配置关系不够可信时会静默跳过。
-    </p>
-    <hr/>
-    <p>
         TomlJump adds focused bidirectional navigation between TOML configuration, project files,
         and matching source configuration declarations.
     </p>
@@ -32,6 +18,20 @@ val pluginDescription = """
         TomlJump intentionally does not replace TOML syntax highlighting, formatting, schema validation,
         or completion. It focuses on high-confidence navigation and stays quiet when a configuration
         relationship is not credible.
+    </p>
+    <hr/>
+    <p>
+        TomlJump 为 TOML 配置与对应的项目文件、源码配置声明提供专注的双向跳转能力。
+    </p>
+    <ul>
+        <li>从 TOML 字符串文件路径跳转到项目文件。</li>
+        <li>在 TOML table、key 与匹配的源码配置声明之间双向跳转。</li>
+        <li>支持 Go、Python、Java、TypeScript、JavaScript 中的保守配置匹配。</li>
+        <li>使用 JetBrains 原生跳转能力，例如 Go to Declaration 和 command/control click。</li>
+    </ul>
+    <p>
+        TomlJump 不替代 TOML 语法高亮、格式化、schema 校验或补全。它只专注于高置信度导航；
+        当配置关系不够可信时会静默跳过。
     </p>
 """.trimIndent()
 
