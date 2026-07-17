@@ -35,13 +35,15 @@
     ]]></description>
     <change-notes><![CDATA[
         <ul>
-            <li>更新 JetBrains read-action API 用法，提升与当前 IntelliJ Platform 的兼容性。</li>
-            <li>新增 Linux DO 社区讨论入口。</li>
+            <li>新增源码到 TOML 的反向导航，支持从 Go、Python、Java、TypeScript 和 JavaScript 配置容器及字段跳转到匹配的 TOML table 和 key。</li>
+            <li>唯一可信目标直接打开；多个可信目标使用 JetBrains 原生选择器，并显示完整 TOML 路径和来源文件。</li>
+            <li>加强基于所属配置容器的保守匹配，过滤局部变量、嵌套属性、注释和字符串中的伪声明；关系不明确时保持静默。</li>
         </ul>
         <hr/>
         <ul>
-            <li>Updated JetBrains read-action API usage for compatibility with the current IntelliJ Platform.</li>
-            <li>Added a Linux DO community discussion link.</li>
+            <li>Added source-to-TOML navigation from configuration containers and fields in Go, Python, Java, TypeScript, and JavaScript to matching TOML tables and keys.</li>
+            <li>Unique high-confidence targets open directly; multiple credible targets use the native JetBrains chooser with full TOML paths and source file locations.</li>
+            <li>Strengthened conservative, owner-aware matching to reject false declarations in local variables, nested properties, comments, and strings while staying quiet for uncertain relationships.</li>
         </ul>
     ]]></change-notes>
 
