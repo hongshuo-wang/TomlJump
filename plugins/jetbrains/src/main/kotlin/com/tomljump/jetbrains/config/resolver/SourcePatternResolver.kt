@@ -11,6 +11,7 @@ import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.tomljump.core.ConfigKeyPath
 import com.tomljump.core.ConfigNameNormalizer
+import com.tomljump.jetbrains.config.TomlConfigReferenceKind
 
 abstract class SourcePatternResolver(
     private val extensions: Set<String>,
@@ -23,13 +24,21 @@ abstract class SourcePatternResolver(
         return findDeclarations(sourceText).distinct()
     }
 
-    final override fun resolve(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
+    final override fun resolve(
+        project: Project,
+        keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind?,
+    ): List<PsiElement> {
         return ApplicationManager.getApplication().runReadAction(
-            Computable { resolveInReadAction(project, keyPath) },
+            Computable { resolveInReadAction(project, keyPath, kind) },
         )
     }
 
-    private fun resolveInReadAction(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
+    private fun resolveInReadAction(
+        project: Project,
+        keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind?,
+    ): List<PsiElement> {
         // Navigation can be retried after indexing; returning no targets keeps unresolved keys quiet.
         if (DumbService.isDumb(project)) return emptyList()
         val scope = GlobalSearchScope.projectScope(project)
@@ -43,7 +52,7 @@ abstract class SourcePatternResolver(
                     if (virtualFile.length > MAX_SOURCE_FILE_BYTES) return@flatMap emptySequence()
                     val psiFile = PsiManager.getInstance(project).findFile(virtualFile) ?: return@flatMap emptySequence()
                     val text = psiFile.text
-                    findTargets(text, keyPath).mapNotNull { target ->
+                    findTargets(text, keyPath, kind).mapNotNull { target ->
                         ProgressManager.checkCanceled()
                         if (!isValidTargetRange(target, text)) return@mapNotNull null
                         psiFile.findElementAt(target.offset)?.let { leaf ->
@@ -63,14 +72,19 @@ abstract class SourcePatternResolver(
     protected open fun findDeclarations(sourceText: String): List<ConfigSourceDeclaration> = emptyList()
 
     /** Results may be unsorted and duplicated; mapped PSI targets are validated and deduplicated. */
-    protected open fun findTargets(sourceText: String, keyPath: ConfigKeyPath): List<ConfigSourceTarget> {
+    protected open fun findTargets(
+        sourceText: String,
+        keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind? = null,
+    ): List<ConfigSourceTarget> {
         val declarations = declarationsIn(sourceText)
-        if (keyPath.segments.size == 1) {
+        if (kind == TomlConfigReferenceKind.TABLE || (kind == null && keyPath.segments.size == 1)) {
             val containers = declarations.filter { declaration ->
                 declaration.kind == ConfigSourceDeclarationKind.CONTAINER &&
                     ConfigSourceNameMatcher.matchesContainerName(keyPath.leaf, declaration.label)
             }
             if (containers.isNotEmpty()) return containers.map(ConfigSourceDeclaration::toTarget)
+            if (kind == TomlConfigReferenceKind.TABLE) return emptyList()
         }
 
         val fields = declarations

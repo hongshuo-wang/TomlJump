@@ -135,6 +135,96 @@ class SourceToTomlResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("openai"), targets.map { it.text })
     }
 
+    fun testNestedContainerResolvesToNestedTomlTableLeaf() {
+        myFixture.addFileToProject("app.toml", "[app.database]\nhost = \"localhost\"")
+        val source = configureSource(
+            "config.go",
+            """
+            package config
+
+            type Data<caret>baseConfig struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = SourceToTomlResolver().resolve(source.file, source.offset)
+
+        assertEquals(listOf("database"), targets.map { it.text })
+    }
+
+    fun testNestedFieldResolvesUsingNearestTomlContainer() {
+        myFixture.addFileToProject("app.toml", "[app.database]\nhost = \"localhost\"")
+        val source = configureSource(
+            "config.go",
+            """
+            package config
+
+            type DatabaseConfig struct {
+                Ho<caret>st string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = SourceToTomlResolver().resolve(source.file, source.offset)
+
+        assertEquals(listOf("host"), targets.map { it.text })
+    }
+
+    fun testRootDottedKeyResolvesOnlyToLeafSegment() {
+        myFixture.addFileToProject("app.toml", "app.database.host = \"localhost\"")
+        val source = configureSource(
+            "config.go",
+            """
+            package config
+
+            type DatabaseConfig struct {
+                Ho<caret>st string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = SourceToTomlResolver().resolve(source.file, source.offset)
+
+        assertEquals(listOf("host"), targets.map { it.text })
+    }
+
+    fun testArrayTableFieldResolvesToTomlKey() {
+        myFixture.addFileToProject("app.toml", "[[products]]\nname = \"Hammer\"")
+        val source = configureSource(
+            "config.go",
+            """
+            package config
+
+            type ProductsConfig struct {
+                Na<caret>me string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = SourceToTomlResolver().resolve(source.file, source.offset)
+
+        assertEquals(listOf("name"), targets.map { it.text })
+    }
+
+    fun testNestedFieldWithMismatchedNearestContainerStaysUnresolved() {
+        myFixture.addFileToProject("app.toml", "[app.database]\nhost = \"localhost\"")
+        val source = configureSource(
+            "config.go",
+            """
+            package config
+
+            type Credentials struct {
+                Ho<caret>st string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = SourceToTomlResolver().resolve(source.file, source.offset)
+
+        assertTrue(targets.isEmpty())
+    }
+
     fun testPythonMethodLocalStaysUnresolved() {
         myFixture.addFileToProject("app.toml", "[openai]\nmodel = \"gpt\"")
         val source = configureSource(

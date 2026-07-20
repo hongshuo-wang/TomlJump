@@ -5,6 +5,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.tomljump.core.ConfigKeyPath
+import com.tomljump.jetbrains.config.TomlConfigReferenceKind
 
 class TomlConfigTargetResolver(
     private val resolvers: List<LanguageConfigResolver> = listOf(
@@ -15,16 +16,24 @@ class TomlConfigTargetResolver(
         JavaScriptConfigResolver(),
     ),
 ) {
-    fun resolve(element: PsiElement, keyPath: ConfigKeyPath): List<PsiElement> {
+    fun resolve(
+        element: PsiElement,
+        keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind? = null,
+    ): List<PsiElement> {
         val project = element.project
-        val candidates = resolveAll(project, keyPath)
-        return preferTargetsInMatchingContainer(project, keyPath, candidates).distinctBy(::dedupeKey)
+        val candidates = resolveAll(project, keyPath, kind)
+        return preferTargetsInMatchingContainer(project, keyPath, kind, candidates).distinctBy(::dedupeKey)
     }
 
-    private fun resolveAll(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
+    private fun resolveAll(
+        project: Project,
+        keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind?,
+    ): List<PsiElement> {
         return resolvers.flatMap { resolver ->
             try {
-                resolver.resolve(project, keyPath)
+                resolver.resolve(project, keyPath, kind)
             } catch (error: ProcessCanceledException) {
                 throw error
             } catch (error: Throwable) {
@@ -37,12 +46,15 @@ class TomlConfigTargetResolver(
     private fun preferTargetsInMatchingContainer(
         project: Project,
         keyPath: ConfigKeyPath,
+        kind: TomlConfigReferenceKind?,
         candidates: List<PsiElement>,
     ): List<PsiElement> {
-        if (keyPath.segments.size <= 1 || candidates.isEmpty()) return candidates
+        if (kind == TomlConfigReferenceKind.TABLE || keyPath.segments.size <= 1 || candidates.isEmpty()) {
+            return candidates
+        }
 
         val containerKeyPath = ConfigKeyPath.from(keyPath.segments.dropLast(1))
-        val containerFiles = resolveAll(project, containerKeyPath)
+        val containerFiles = resolveAll(project, containerKeyPath, TomlConfigReferenceKind.TABLE)
             .mapNotNull { it.containingFile?.virtualFile?.path }
             .toSet()
         if (containerFiles.isEmpty()) return candidates

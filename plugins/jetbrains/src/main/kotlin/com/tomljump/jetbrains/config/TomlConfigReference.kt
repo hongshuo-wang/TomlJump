@@ -12,12 +12,13 @@ class TomlConfigReference(
     element: PsiElement,
     rangeInElement: TextRange,
     private val keyPath: ConfigKeyPath,
+    private val kind: TomlConfigReferenceKind,
     private val resolver: TomlConfigTargetResolver = TomlConfigTargetResolver(),
 ) : PsiReferenceBase.Poly<PsiElement>(element, rangeInElement, true) {
-    override fun resolve(): PsiElement? = resolver.resolve(element, keyPath).firstOrNull()
+    override fun resolve(): PsiElement? = resolver.resolve(element, keyPath, kind).firstOrNull()
 
     override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> {
-        return resolver.resolve(element, keyPath)
+        return resolver.resolve(element, keyPath, kind)
             .map(::PsiElementResolveResult)
             .toTypedArray()
     }

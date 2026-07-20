@@ -22,6 +22,7 @@ import com.tomljump.jetbrains.config.resolver.JavaScriptConfigResolver
 import com.tomljump.jetbrains.config.resolver.PythonConfigResolver
 import com.tomljump.jetbrains.config.resolver.SourcePatternResolver
 import com.tomljump.jetbrains.config.resolver.TypeScriptConfigResolver
+import org.toml.lang.psi.TomlKey
 import org.toml.lang.psi.TomlKeySegment
 import org.toml.lang.psi.TomlKeyValue
 import org.toml.lang.psi.TomlTableHeader
@@ -65,17 +66,16 @@ class SourceToTomlResolver(
         if (declaration.kind == ConfigSourceDeclarationKind.CONTAINER) {
             return tomlTargets.filter { target ->
                 target.kind == TomlConfigNavigationTargetKind.TABLE &&
-                    target.keyPath.segments.size == 1 &&
                     ConfigSourceNameMatcher.matchesContainerName(target.keyPath.leaf, declaration.label)
             }
         }
 
         val ownerLabel = declaration.ownerLabel ?: return emptyList()
         return tomlTargets.filter { target ->
-            if (target.kind != TomlConfigNavigationTargetKind.KEY || target.keyPath.segments.size != 2) {
+            if (target.kind != TomlConfigNavigationTargetKind.KEY || target.keyPath.segments.size < 2) {
                 return@filter false
             }
-            val containerName = target.keyPath.segments.first()
+            val containerName = target.keyPath.segments[target.keyPath.segments.lastIndex - 1]
             val fieldMatches = if (declaration.aliases.isNotEmpty()) {
                 target.keyPath.leaf in declaration.aliases
             } else {
@@ -104,6 +104,8 @@ class SourceToTomlResolver(
 
     private fun toNavigationTarget(element: TomlKeySegment): TomlConfigNavigationTarget? {
         ProgressManager.checkCanceled()
+        val key = element.parent as? TomlKey ?: return null
+        if (key.segments.lastOrNull() != element) return null
         val extracted = TomlConfigKeyPathExtractor.extract(element) ?: return null
         val kind = when {
             PsiTreeUtil.getParentOfType(element, TomlTableHeader::class.java, false) != null ->

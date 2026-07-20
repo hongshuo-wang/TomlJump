@@ -5,6 +5,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.tomljump.core.ConfigKeyPath
+import com.tomljump.jetbrains.config.TomlConfigReferenceKind
 import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -308,7 +309,11 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         val resolver = TomlConfigTargetResolver(
             resolvers = listOf(
                 object : LanguageConfigResolver {
-                    override fun resolve(project: Project, keyPath: ConfigKeyPath): List<PsiElement> {
+                    override fun resolve(
+                        project: Project,
+                        keyPath: ConfigKeyPath,
+                        kind: TomlConfigReferenceKind?,
+                    ): List<PsiElement> {
                         throw ProcessCanceledException()
                     }
                 },
@@ -386,6 +391,67 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("DatabaseAPIKey"), targets.map { it.text })
     }
 
+    fun testNestedTableUsesNearestContainerName() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type DatabaseConfig struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("app", "database"),
+            TomlConfigReferenceKind.TABLE,
+        )
+
+        assertEquals(listOf("DatabaseConfig"), targets.map { it.text })
+    }
+
+    fun testNestedFieldUsesNearestContainerName() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type DatabaseConfig struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("app", "database", "host"),
+        )
+
+        assertEquals(listOf("Host"), targets.map { it.text })
+    }
+
+    fun testNestedFieldWithMismatchedNearestContainerStaysUnresolved() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type Credentials struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+
+        val targets = GoConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("app", "database", "host"),
+        )
+
+        assertTrue(targets.isEmpty())
+    }
+
     fun testSourcePatternResolverIgnoresInvalidOffsetsAndDeduplicatesTargets() {
         myFixture.addFileToProject(
             "config.go",
@@ -398,7 +464,11 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
             """.trimIndent(),
         )
         val resolver = object : SourcePatternResolver(setOf("go")) {
-            override fun findTargets(sourceText: String, keyPath: ConfigKeyPath): List<ConfigSourceTarget> {
+            override fun findTargets(
+                sourceText: String,
+                keyPath: ConfigKeyPath,
+                kind: TomlConfigReferenceKind?,
+            ): List<ConfigSourceTarget> {
                 val offset = sourceText.indexOf("APIKey")
                 return listOf(
                     ConfigSourceTarget(-1, "before-start"),

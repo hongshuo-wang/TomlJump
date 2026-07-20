@@ -66,7 +66,76 @@ class TomlConfigKeyPathExtractorTest : BasePlatformTestCase() {
         assertEquals("host", extracted?.text)
     }
 
-    fun testExtractsFullDottedTablePathFromEitherTableSegment() {
+    fun testExtractsQuotedTableAndKeySegments() {
+        myFixture.configureByText(
+            "app.toml",
+            """
+            ["open.ai"]
+            "api.key" = "secret"
+            """.trimIndent(),
+        )
+
+        val table = TomlConfigKeyPathExtractor.extract(findElementAt("open.ai"))
+        val key = TomlConfigKeyPathExtractor.extract(findElementAt("api.key"))
+
+        assertEquals(listOf("open.ai"), table?.keyPath?.segments)
+        assertEquals("open.ai", table?.text)
+        assertEquals(TomlConfigReferenceKind.TABLE, table?.kind)
+        assertEquals(listOf("open.ai", "api.key"), key?.keyPath?.segments)
+        assertEquals("api.key", key?.text)
+        assertEquals(TomlConfigReferenceKind.KEY, key?.kind)
+    }
+
+    fun testExtractsRootDottedKey() {
+        myFixture.configureByText(
+            "app.toml",
+            "servers.production.host = \"127.0.0.1\"",
+        )
+
+        val extracted = TomlConfigKeyPathExtractor.extract(findElementAt("host"))
+
+        assertEquals(listOf("servers", "production", "host"), extracted?.keyPath?.segments)
+        assertEquals("host", extracted?.text)
+    }
+
+    fun testExtractsDottedKeyInsideTable() {
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [servers]
+            production.host = "127.0.0.1"
+            """.trimIndent(),
+        )
+
+        val extracted = TomlConfigKeyPathExtractor.extract(findElementAt("host"))
+
+        assertEquals(listOf("servers", "production", "host"), extracted?.keyPath?.segments)
+        assertEquals("host", extracted?.text)
+    }
+
+    fun testExtractsArrayTableKeyPath() {
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [[products]]
+            name = "Hammer"
+            """.trimIndent(),
+        )
+
+        val extracted = TomlConfigKeyPathExtractor.extract(findElementAt("name"))
+
+        assertEquals(listOf("products", "name"), extracted?.keyPath?.segments)
+        assertEquals("name", extracted?.text)
+        assertEquals(TomlConfigReferenceKind.KEY, extracted?.kind)
+    }
+
+    fun testIgnoresInlineTableKey() {
+        myFixture.configureByText("app.toml", "point = { x = 1, y = 2 }")
+
+        assertNull(TomlConfigKeyPathExtractor.extract(findElementAt("x")))
+    }
+
+    fun testExtractsFullDottedTablePathOnlyFromLeafSegment() {
         myFixture.configureByText(
             "app.toml",
             """
@@ -78,17 +147,14 @@ class TomlConfigKeyPathExtractorTest : BasePlatformTestCase() {
         val servers = TomlConfigKeyPathExtractor.extract(findElementAt("servers"))
         val production = TomlConfigKeyPathExtractor.extract(findElementAt("production"))
 
-        assertEquals(listOf("servers", "production"), servers?.keyPath?.segments)
-        assertEquals("servers", servers?.text)
-        assertEquals(0, servers?.rangeInElement?.startOffset)
-        assertEquals("servers".length, servers?.rangeInElement?.endOffset)
+        assertNull(servers)
         assertEquals(listOf("servers", "production"), production?.keyPath?.segments)
         assertEquals("production", production?.text)
         assertEquals(0, production?.rangeInElement?.startOffset)
         assertEquals("production".length, production?.rangeInElement?.endOffset)
     }
 
-    fun testMalformedDottedTableDoesNotReusePreviousTable() {
+    fun testMalformedDottedTableAndFollowingKeyStayUnresolved() {
         myFixture.configureByText(
             "app.toml",
             """
@@ -103,7 +169,7 @@ class TomlConfigKeyPathExtractorTest : BasePlatformTestCase() {
         val key = TomlConfigKeyPathExtractor.extract(findElementAt("host"))
 
         assertNull(table)
-        assertEquals(listOf("host"), key?.keyPath?.segments)
+        assertNull(key)
     }
 
     fun testIgnoresStringValue() {

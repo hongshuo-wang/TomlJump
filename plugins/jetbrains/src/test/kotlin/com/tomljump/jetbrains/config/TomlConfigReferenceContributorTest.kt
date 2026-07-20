@@ -37,6 +37,33 @@ class TomlConfigReferenceContributorTest : BasePlatformTestCase() {
         assertTrue(reference.isSoft)
     }
 
+    fun testCreatesReferenceForQuotedKeyInsideNestedTable() {
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [app."data.base"]
+            "api.<caret>key" = "secret"
+            """.trimIndent(),
+        )
+
+        val reference = referenceAtCaret() ?: error("Expected quoted TOML key reference")
+
+        assertEquals("app.data.base.api.key", reference.canonicalText)
+        assertTrue(reference.isSoft)
+    }
+
+    fun testDoesNotCreateReferenceForNonLeafDottedSegment() {
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [a<caret>pp.database]
+            host = "localhost"
+            """.trimIndent(),
+        )
+
+        assertNull(referenceAtCaret())
+    }
+
     fun testResolvesTomlKeyToGoStructTag() {
         myFixture.addFileToProject(
             "config.go",
@@ -83,6 +110,58 @@ class TomlConfigReferenceContributorTest : BasePlatformTestCase() {
         val resolved = referenceAtCaret()?.resolve()
 
         assertEquals("OpenAIConfig", resolved?.text)
+    }
+
+    fun testResolvesNestedTomlTableUsingNearestContainer() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type DatabaseConfig struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [app.data<caret>base]
+            host = "localhost"
+            """.trimIndent(),
+        )
+
+        val resolved = referenceAtCaret()?.resolve()
+
+        assertEquals("DatabaseConfig", resolved?.text)
+    }
+
+    fun testNestedTomlKeyDoesNotResolveAsContainer() {
+        myFixture.addFileToProject(
+            "config.go",
+            """
+            package config
+
+            type AppConfig struct {
+                Database string
+            }
+
+            type DatabaseConfig struct {
+                Host string
+            }
+            """.trimIndent(),
+        )
+        myFixture.configureByText(
+            "app.toml",
+            """
+            [app]
+            data<caret>base = "primary"
+            """.trimIndent(),
+        )
+
+        val resolved = referenceAtCaret()?.resolve()
+
+        assertEquals("Database", resolved?.text)
     }
 
     fun testDoesNotCreateReferenceInNonTomlFile() {

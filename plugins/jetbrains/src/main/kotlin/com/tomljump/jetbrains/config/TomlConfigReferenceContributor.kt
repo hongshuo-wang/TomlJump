@@ -24,6 +24,7 @@ class TomlConfigReferenceContributor : PsiReferenceContributor() {
                             element = element,
                             rangeInElement = extracted.rangeInElement,
                             keyPath = extracted.keyPath,
+                            kind = extracted.kind,
                         ),
                     )
                 }

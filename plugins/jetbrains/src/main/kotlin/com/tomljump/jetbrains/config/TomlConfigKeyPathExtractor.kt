@@ -2,82 +2,62 @@ package com.tomljump.jetbrains.config
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.util.PsiTreeUtil
 import com.tomljump.core.ConfigKeyPath
+import org.toml.lang.psi.TomlHeaderOwner
+import org.toml.lang.psi.TomlInlineTable
+import org.toml.lang.psi.TomlKey
+import org.toml.lang.psi.TomlKeySegment
+import org.toml.lang.psi.TomlKeyValue
+import org.toml.lang.psi.TomlTableHeader
 
 object TomlConfigKeyPathExtractor {
-    private val tableLinePattern = Regex("""^\s*\[([^]]*)]\s*(?:#.*)?$""")
-    private val tableSegmentPattern = Regex("""[A-Za-z0-9_-]+""")
-    private val keyPattern = Regex("""^\s*([A-Za-z0-9_-]+)\s*=""")
-
     fun extract(element: PsiElement): ExtractedConfigKeyPath? {
         if (!isTomlFile(element)) return null
-        val text = element.text ?: return null
-        if (!isConfigIdentifier(text)) return null
+        val segment = PsiTreeUtil.getParentOfType(element, TomlKeySegment::class.java, false) ?: return null
+        val segmentName = segment.name?.takeIf(String::isNotBlank) ?: return null
+        val key = segment.parent as? TomlKey ?: return null
+        if (key.segments.lastOrNull() != segment) return null
+        val keySegments = segmentsOf(key) ?: return null
 
-        val fileText = element.containingFile?.text ?: return null
-        val elementStart = element.textRange.startOffset
-        val line = lineAt(fileText, elementStart)
-        val lineText = fileText.substring(line.start, line.end)
-        val offsetInLine = elementStart - line.start
-
-        tableLinePattern.matchEntire(lineText)?.let { match ->
-            val tableText = match.groupValues[1]
-            val tableSegments = parseTableSegments(tableText) ?: return null
-            val tableStart = lineText.indexOf(tableText)
-            val tableEnd = tableStart + tableText.length
-            if (offsetInLine in tableStart until tableEnd && tableText.split('.').contains(text)) {
-                return ExtractedConfigKeyPath(
-                    keyPath = ConfigKeyPath.from(tableSegments),
-                    text = text,
-                    rangeInElement = TextRange.from(0, text.length),
-                )
+        val (pathSegments, kind) = when (val owner = key.parent) {
+            is TomlTableHeader -> {
+                if (hasSyntaxError(owner)) return null
+                keySegments to TomlConfigReferenceKind.TABLE
             }
-        }
-
-        keyPattern.find(lineText)?.let { match ->
-            val keyText = match.groupValues[1]
-            val keyStart = lineText.indexOf(keyText)
-            val keyEnd = keyStart + keyText.length
-            if (offsetInLine in keyStart until keyEnd && keyText == text) {
-                val tableSegments = currentTableSegments(fileText, line.start)
-                return ExtractedConfigKeyPath(
-                    keyPath = ConfigKeyPath.from(tableSegments + keyText),
-                    text = keyText,
-                    rangeInElement = TextRange.from(0, text.length),
-                )
+            is TomlKeyValue -> {
+                if (PsiTreeUtil.getParentOfType(owner, TomlInlineTable::class.java, false) != null) return null
+                ((containingHeaderSegments(owner) ?: return null) + keySegments) to TomlConfigReferenceKind.KEY
             }
+            else -> return null
         }
 
-        return null
+        return ExtractedConfigKeyPath(
+            keyPath = ConfigKeyPath.from(pathSegments),
+            text = segmentName,
+            rangeInElement = TextRange.from(0, segment.textLength),
+            kind = kind,
+        )
     }
 
-    private fun currentTableSegments(fileText: String, beforeOffset: Int): List<String> {
-        val before = fileText.substring(0, beforeOffset)
-        var current = emptyList<String>()
-        before.lineSequence().forEach { line ->
-            tableLinePattern.matchEntire(line.trim())?.let { match ->
-                current = parseTableSegments(match.groupValues[1]) ?: emptyList()
-            }
-        }
-        return current
+    private fun containingHeaderSegments(entry: TomlKeyValue): List<String>? {
+        val headerOwner = PsiTreeUtil.getParentOfType(entry, TomlHeaderOwner::class.java, true)
+            ?: return emptyList()
+        val header = headerOwner.header ?: return null
+        if (hasSyntaxError(header)) return null
+        val key = header.key ?: return null
+        return segmentsOf(key)
     }
 
-    private fun parseTableSegments(tableText: String): List<String>? {
-        val segments = tableText.split('.')
-        if (segments.isEmpty() || segments.any { !tableSegmentPattern.matches(it) }) {
-            return null
-        }
-        return segments
+    private fun segmentsOf(key: TomlKey): List<String>? {
+        if (PsiTreeUtil.findChildOfType(key, PsiErrorElement::class.java) != null) return null
+        val segments = key.segments.mapNotNull { it.name?.takeIf(String::isNotBlank) }
+        return segments.takeIf { it.size == key.segments.size && it.isNotEmpty() }
     }
 
-    private fun lineAt(fileText: String, offset: Int): LineRange {
-        val start = fileText.lastIndexOf('\n', (offset - 1).coerceAtLeast(0)).let { if (it < 0) 0 else it + 1 }
-        val end = fileText.indexOf('\n', offset).let { if (it < 0) fileText.length else it }
-        return LineRange(start, end)
-    }
-
-    private fun isConfigIdentifier(value: String): Boolean {
-        return value.isNotEmpty() && value.all { it.isLetterOrDigit() || it == '_' || it == '-' }
+    private fun hasSyntaxError(element: PsiElement): Boolean {
+        return PsiTreeUtil.findChildOfType(element, PsiErrorElement::class.java) != null
     }
 
     private fun isTomlFile(element: PsiElement): Boolean {
@@ -88,6 +68,4 @@ object TomlConfigKeyPathExtractor {
             else -> file.name.endsWith(".toml", ignoreCase = true)
         }
     }
-
-    private data class LineRange(val start: Int, val end: Int)
 }
