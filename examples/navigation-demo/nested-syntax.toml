@@ -1,0 +1,17 @@
+# CASE 5 - Root dotted key. Only the leaf segment should navigate.
+app.cache.host = "127.0.0.1"
+
+# CASE 9 - Inline-table members are intentionally unsupported.
+point = { x = 1, y = 2 }
+
+# CASE 6 - Nested table. The nearest container is database.
+[app.database]
+host = "db.internal"
+
+# CASE 7 - Quoted table and key segments.
+[app."quoted-service"]
+"base.url" = "https://example.com"
+
+# CASE 8 - Array of tables.
+[[products]]
+name = "Hammer"

@@ -41,15 +41,17 @@ val pluginDescription = """
 
 val pluginChangeNotes = """
     <ul>
-        <li>新增源码到 TOML 的反向导航，支持从 Go、Python、Java、TypeScript 和 JavaScript 配置容器及字段跳转到匹配的 TOML table 和 key。</li>
-        <li>唯一可信目标直接打开；多个可信目标使用 JetBrains 原生选择器，并显示完整 TOML 路径和来源文件。</li>
-        <li>加强基于所属配置容器的保守匹配，过滤局部变量、嵌套属性、注释和字符串中的伪声明；关系不明确时保持静默。</li>
+        <li>新增嵌套 TOML 路径双向导航，使用最接近字段的明确配置容器匹配嵌套 table、key 和 root dotted key。</li>
+        <li>改用 JetBrains TOML PSI 提取路径，支持 quoted key、dotted key、普通 table 和 array of tables。</li>
+        <li>继续保持保守导航：dotted path 仅叶子段参与跳转，inline table 成员、畸形路径和容器不匹配保持静默。</li>
+        <li>扩充可复用手测项目，覆盖新增语法、正反向跳转和不应跳转的负面案例。</li>
     </ul>
     <hr/>
     <ul>
-        <li>Added source-to-TOML navigation from configuration containers and fields in Go, Python, Java, TypeScript, and JavaScript to matching TOML tables and keys.</li>
-        <li>Unique high-confidence targets open directly; multiple credible targets use the native JetBrains chooser with full TOML paths and source file locations.</li>
-        <li>Strengthened conservative, owner-aware matching to reject false declarations in local variables, nested properties, comments, and strings while staying quiet for uncertain relationships.</li>
+        <li>Added bidirectional navigation for nested TOML paths, matching nested tables, keys, and root dotted keys through the nearest explicit source container.</li>
+        <li>Moved path extraction to JetBrains TOML PSI with support for quoted keys, dotted keys, standard tables, and arrays of tables.</li>
+        <li>Kept navigation conservative: only dotted-path leaf segments navigate, while inline-table members, malformed paths, and mismatched containers stay unresolved.</li>
+        <li>Expanded the reusable manual demo with positive and negative coverage for the new syntax.</li>
     </ul>
 """.trimIndent()
 

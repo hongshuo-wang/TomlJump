@@ -32,6 +32,7 @@ jobs:
         id: release
         shell: bash
         run: |
+          configured_version="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             tag="${GITHUB_REF_NAME}"
             if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
@@ -39,8 +40,12 @@ jobs:
               exit 1
             fi
             version="${tag#v}"
+            if [[ "${configured_version}" != "${version}" ]]; then
+              echo "Tag version ${version} does not match pluginVersion=${configured_version}" >&2
+              exit 1
+            fi
           else
-            version="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
+            version="${configured_version}"
           fi
 
           if [[ -z "${version}" ]]; then
@@ -220,10 +225,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           ZIP_PATH: ${{ steps.signed.outputs.zip_path }}
+          NOTES_PATH: .github/release-notes.md
         shell: bash
         run: |
+          if [[ ! -s "${NOTES_PATH}" ]]; then
+            echo "Missing Chinese GitHub Release notes at ${NOTES_PATH}" >&2
+            exit 1
+          fi
+
           if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --title "${TAG}" --notes-file "${NOTES_PATH}"
             gh release upload "${TAG}" "${ZIP_PATH}" --clobber
           else
-            gh release create "${TAG}" "${ZIP_PATH}" --title "${TAG}" --generate-notes
+            gh release create "${TAG}" "${ZIP_PATH}" --title "${TAG}" --notes-file "${NOTES_PATH}"
           fi
