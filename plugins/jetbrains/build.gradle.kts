@@ -15,6 +15,7 @@ val pluginDescription = """
     <ul>
         <li>Jump from TOML string file paths to project files.</li>
         <li>Navigate both ways between TOML tables and keys and matching source declarations.</li>
+        <li>Navigate pyproject.toml project scripts to Python modules and callables.</li>
         <li>Resolve conservative config declarations in Go, Python, Java, TypeScript, and JavaScript.</li>
         <li>Use standard JetBrains navigation actions such as Go to Declaration and command/control click.</li>
     </ul>
@@ -30,6 +31,7 @@ val pluginDescription = """
     <ul>
         <li>从 TOML 字符串文件路径跳转到项目文件。</li>
         <li>在 TOML table、key 与匹配的源码配置声明之间双向跳转。</li>
+        <li>从 pyproject.toml 的 project scripts 跳转到 Python 模块和 callable。</li>
         <li>支持 Go、Python、Java、TypeScript、JavaScript 中的保守配置匹配。</li>
         <li>使用 JetBrains 原生跳转能力，例如 Go to Declaration 和 command/control click。</li>
     </ul>

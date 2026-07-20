@@ -45,6 +45,18 @@ GRADLE_USER_HOME=/private/tmp/tomljump-gradle-home \
 
 这些声明名称彼此独立，正常情况下都应直接跳转，不显示多目标选择器。
 
+## Pyproject Entry Point
+
+打开 `pyproject.toml`，定位到：
+
+```toml
+tomljump-demo = "python.cli:main"
+```
+
+- 点击 `python.cli`，应进入 `python/cli.py`。
+- 点击 `main`，应进入同一文件的顶层 `main` 函数。
+- `[project.scripts]` 之外的相似字符串不应获得此跳转。
+
 ## TOML 到源码
 
 打开 `app.toml` 并检查：
@@ -114,5 +126,17 @@ Then open `go/nested_syntax.go` and check reverse navigation:
 - `ProductsConfig` and `Name` should open the array table and its `name` key.
 
 The declarations use distinct container names, so each supported case should navigate directly without a multiple-target chooser.
+
+## Pyproject Entry Point
+
+Open `pyproject.toml` and locate:
+
+```toml
+tomljump-demo = "python.cli:main"
+```
+
+- Click `python.cli` to open `python/cli.py`.
+- Click `main` to open the top-level `main` function in that file.
+- Similar strings outside `[project.scripts]` should not receive this navigation.
 
 Field matching is always scoped to the owning configuration container. Explicit Go tags and Java annotations use exact key aliases; declarations without a credible owner relationship stay unresolved.

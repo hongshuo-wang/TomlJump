@@ -304,6 +304,134 @@ class LanguageConfigResolverTest : BasePlatformTestCase() {
         assertEquals(listOf("openaiConfig"), targets.map { it.text })
     }
 
+    fun testPythonResolverUsesOwningContainerForDuplicateFieldNames() {
+        val file = myFixture.addFileToProject(
+            "config.py",
+            """
+            class OpenAIConfig:
+                token: str
+
+            class DatabaseConfig:
+                token: str
+            """.trimIndent(),
+        )
+
+        val target = PythonConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        ).single()
+
+        assertEquals(file.text.lastIndexOf("token"), target.textOffset)
+    }
+
+    fun testJavaResolverUsesOwningContainerForDuplicateFieldNames() {
+        val file = myFixture.addFileToProject(
+            "Config.java",
+            """
+            class OpenAIConfig {
+                String token;
+            }
+
+            class DatabaseConfig {
+                String token;
+            }
+            """.trimIndent(),
+        )
+
+        val target = JavaConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        ).single()
+
+        assertEquals(file.text.lastIndexOf("token"), target.textOffset)
+    }
+
+    fun testTypeScriptResolverUsesOwningContainerForDuplicateFieldNames() {
+        val file = myFixture.addFileToProject(
+            "config.ts",
+            """
+            interface OpenAIConfig {
+                token: string
+            }
+
+            interface DatabaseConfig {
+                token: string
+            }
+            """.trimIndent(),
+        )
+
+        val target = TypeScriptConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        ).single()
+
+        assertEquals(file.text.lastIndexOf("token"), target.textOffset)
+    }
+
+    fun testJavaScriptResolverUsesOwningContainerForDuplicateFieldNames() {
+        val file = myFixture.addFileToProject(
+            "config.js",
+            """
+            const openAIConfig = {
+                token: "openai"
+            }
+
+            const databaseConfig = {
+                token: "database"
+            }
+            """.trimIndent(),
+        )
+
+        val target = JavaScriptConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        ).single()
+
+        assertEquals(file.text.lastIndexOf("token"), target.textOffset)
+    }
+
+    fun testPythonResolverIgnoresDeclarationLikeTextInsideTripleQuotedString() {
+        val tripleQuote = "\"\"\""
+        myFixture.addFileToProject(
+            "config.py",
+            """
+            documentation = ${tripleQuote}A single " quote is valid inside a triple-quoted string.
+            class DatabaseConfig:
+                token: str
+            $tripleQuote
+            """.trimIndent(),
+        )
+
+        val targets = PythonConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        )
+
+        assertTrue(targets.isEmpty())
+    }
+
+    fun testJavaResolverIgnoresDeclarationLikeTextInsideTextBlock() {
+        val tripleQuote = "\"\"\""
+        myFixture.addFileToProject(
+            "Config.java",
+            """
+            class DatabaseConfig {
+                String example = $tripleQuote
+                    A single " quote is valid inside a text block.
+                    String token;
+                    $tripleQuote;
+            }
+            """.trimIndent(),
+        )
+
+        val targets = JavaConfigResolver().resolve(
+            myFixture.project,
+            ConfigKeyPath.of("database", "token"),
+        )
+
+        assertTrue(targets.isEmpty())
+    }
+
     fun testTargetResolverRethrowsProcessCanceledException() {
         myFixture.configureByText("app.toml", "[openai]")
         val resolver = TomlConfigTargetResolver(

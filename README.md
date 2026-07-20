@@ -30,6 +30,7 @@ The plugin is intentionally conservative: when a configuration relationship is n
 - Jump from TOML string file paths to project files, for example `schema = "./schemas/user.json"`.
 - Jump from TOML tables and keys to matching configuration code.
 - Jump from supported configuration containers and fields in source code back to matching TOML tables and keys.
+- Navigate `[project.scripts]` entry-point module and callable segments to Python source declarations.
 - Resolve clear configuration references in Go, Python, Java, TypeScript, and JavaScript.
 - Use normal JetBrains navigation actions such as Go to Declaration and command/control click.
 - Fail quietly when a configuration relationship is not credible.

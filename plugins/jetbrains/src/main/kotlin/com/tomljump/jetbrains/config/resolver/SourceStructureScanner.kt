@@ -93,6 +93,7 @@ internal object SourceStructureScanner {
         while (index < endOffset) {
             val char = sourceText[index]
             val next = sourceText.getOrNull(index + 1)
+            val nextNext = sourceText.getOrNull(index + 2)
             when (state) {
                 ScanState.CODE -> when {
                     hashLineComments && char == '#' -> state = ScanState.LINE_COMMENT
@@ -103,6 +104,14 @@ internal object SourceStructureScanner {
                     char == '/' && next == '*' -> {
                         state = ScanState.BLOCK_COMMENT
                         index += 1
+                    }
+                    char == '\'' && next == '\'' && nextNext == '\'' -> {
+                        state = ScanState.TRIPLE_SINGLE_QUOTE
+                        index += 2
+                    }
+                    char == '"' && next == '"' && nextNext == '"' -> {
+                        state = ScanState.TRIPLE_DOUBLE_QUOTE
+                        index += 2
                     }
                     char == '\'' -> state = ScanState.SINGLE_QUOTE
                     char == '"' -> state = ScanState.DOUBLE_QUOTE
@@ -130,6 +139,19 @@ internal object SourceStructureScanner {
                         char == closing -> state = ScanState.CODE
                     }
                 }
+                ScanState.TRIPLE_SINGLE_QUOTE,
+                ScanState.TRIPLE_DOUBLE_QUOTE,
+                -> {
+                    val closing = if (state == ScanState.TRIPLE_SINGLE_QUOTE) '\'' else '"'
+                    when {
+                        escaped -> escaped = false
+                        char == '\\' -> escaped = true
+                        char == closing && next == closing && nextNext == closing -> {
+                            state = ScanState.CODE
+                            index += 2
+                        }
+                    }
+                }
             }
             index += 1
         }
@@ -147,6 +169,8 @@ internal object SourceStructureScanner {
         BLOCK_COMMENT,
         SINGLE_QUOTE,
         DOUBLE_QUOTE,
+        TRIPLE_SINGLE_QUOTE,
+        TRIPLE_DOUBLE_QUOTE,
         BACKTICK,
     }
 }
