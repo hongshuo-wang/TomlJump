@@ -2,25 +2,66 @@ name: Release
 
 "on":
   workflow_dispatch:
-  push:
-    tags:
-      - "v*.*.*"
+    inputs:
+      target:
+        description: Product line to publish
+        required: true
+        type: choice
+        options:
+          - jetbrains
+          - vscode
+      tag:
+        description: Existing platform-prefixed release tag
+        required: true
+        type: string
 
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ inputs.target }}
+  cancel-in-progress: false
+
 jobs:
-  build:
-    name: Run tests and build plugin ZIP
+  prepare:
+    name: Validate selected target and tag
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.release.outputs.version }}
-
     steps:
-      - name: Check out repository
+      - name: Check out selected tag
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Validate release selection
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          result="$(node plugins/vscode/scripts/validate-release.mjs "${RELEASE_TARGET}" "${RELEASE_TAG}" .)"
+          version="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).version)' "${result}")"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "Validated ${RELEASE_TARGET} release ${version} from ${RELEASE_TAG}"
+
+  jetbrains-build:
+    name: Verify and build JetBrains plugin
+    if: inputs.target == 'jetbrains'
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out selected tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -28,64 +69,35 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Resolve plugin version
-        id: release
-        shell: bash
-        run: |
-          configured_version="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            tag="${GITHUB_REF_NAME}"
-            if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-              echo "Release tags must look like v0.1.0 or v0.1.0-beta.1, got ${tag}" >&2
-              exit 1
-            fi
-            version="${tag#v}"
-            if [[ "${configured_version}" != "${version}" ]]; then
-              echo "Tag version ${version} does not match pluginVersion=${configured_version}" >&2
-              exit 1
-            fi
-          else
-            version="${configured_version}"
-          fi
-
-          if [[ -z "${version}" ]]; then
-            echo "Could not resolve plugin version" >&2
-            exit 1
-          fi
-
-          echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          echo "Building TomlJump ${version}"
-
       - name: Run core tests, JetBrains tests, and plugin build
         env:
-          ORG_GRADLE_PROJECT_pluginVersion: ${{ steps.release.outputs.version }}
+          ORG_GRADLE_PROJECT_pluginVersion: ${{ needs.prepare.outputs.version }}
         run: ./scripts/verify/jetbrains.sh
 
-      - name: Locate plugin ZIP
+      - name: Locate exact plugin ZIP
         id: artifact
         shell: bash
         run: |
-          zip_path="$(find plugins/jetbrains/build/distributions -maxdepth 1 -type f -name '*-${{ steps.release.outputs.version }}.zip' | sort | head -n 1)"
-
-          if [[ -z "${zip_path}" ]]; then
-            echo "No ZIP found under plugins/jetbrains/build/distributions" >&2
+          zip_path="plugins/jetbrains/build/distributions/jetbrains-${{ needs.prepare.outputs.version }}.zip"
+          if [[ ! -f "${zip_path}" ]]; then
+            echo "Missing expected JetBrains ZIP ${zip_path}" >&2
             exit 1
           fi
-
           echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
-          echo "zip_name=$(basename "${zip_path}")" >> "${GITHUB_OUTPUT}"
-          echo "Located ${zip_path}"
 
       - name: Upload unsigned plugin artifact
         uses: actions/upload-artifact@v7
         with:
-          name: tomljump-plugin-unsigned
+          name: jetbrains-${{ needs.prepare.outputs.version }}-unsigned
           path: ${{ steps.artifact.outputs.zip_path }}
           if-no-files-found: error
 
-  compatibility:
+  jetbrains-compatibility:
     name: Verify ${{ matrix.name }} compatibility
-    needs: build
+    if: inputs.target == 'jetbrains'
+    needs:
+      - prepare
+      - jetbrains-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -107,10 +119,11 @@ jobs:
             id: webstorm-2024.3
             type: WS
             version: "2024.3"
-
     steps:
-      - name: Check out repository
+      - name: Check out selected tag
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -121,25 +134,14 @@ jobs:
       - name: Download unsigned plugin artifact
         uses: actions/download-artifact@v8
         with:
-          name: tomljump-plugin-unsigned
+          name: jetbrains-${{ needs.prepare.outputs.version }}-unsigned
           path: verified-plugin
-
-      - name: Locate unsigned plugin ZIP
-        id: artifact
-        shell: bash
-        run: |
-          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
-          if [[ -z "${zip_path}" ]]; then
-            echo "No downloaded plugin ZIP found" >&2
-            exit 1
-          fi
-          echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
 
       - name: Run JetBrains Plugin Verifier
         run: >
           ./gradlew :plugins:jetbrains:verifyPlugin -x buildPlugin
-          -PpluginVersion="${{ needs.build.outputs.version }}"
-          -PpluginArchivePath="${{ steps.artifact.outputs.zip_path }}"
+          -PpluginVersion="${{ needs.prepare.outputs.version }}"
+          -PpluginArchivePath="verified-plugin/jetbrains-${{ needs.prepare.outputs.version }}.zip"
           -PverifierIde="${{ matrix.type }}"
           -PverifierIdeVersion="${{ matrix.version }}"
 
@@ -151,21 +153,22 @@ jobs:
           path: plugins/jetbrains/build/reports/pluginVerifier/
           if-no-files-found: ignore
 
-  publish:
-    name: Sign and publish verified plugin ZIP
-    if: startsWith(github.ref, 'refs/tags/')
+  jetbrains-publish:
+    name: Sign and publish JetBrains plugin
+    if: inputs.target == 'jetbrains'
     needs:
-      - build
-      - compatibility
+      - prepare
+      - jetbrains-build
+      - jetbrains-compatibility
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Check out repository
+      - name: Check out selected tag
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -176,19 +179,8 @@ jobs:
       - name: Download verified plugin artifact
         uses: actions/download-artifact@v8
         with:
-          name: tomljump-plugin-unsigned
+          name: jetbrains-${{ needs.prepare.outputs.version }}-unsigned
           path: verified-plugin
-
-      - name: Locate verified plugin ZIP
-        id: artifact
-        shell: bash
-        run: |
-          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
-          if [[ -z "${zip_path}" ]]; then
-            echo "No verified plugin ZIP found" >&2
-            exit 1
-          fi
-          echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
 
       - name: Sign and publish plugin to JetBrains Marketplace
         env:
@@ -198,44 +190,149 @@ jobs:
           JETBRAINS_PRIVATE_KEY_PASSWORD: ${{ secrets.JETBRAINS_PRIVATE_KEY_PASSWORD }}
         run: >
           ./gradlew :plugins:jetbrains:publishPlugin -x buildPlugin
-          -PpluginVersion="${{ needs.build.outputs.version }}"
-          -PpluginArchivePath="${{ steps.artifact.outputs.zip_path }}"
+          -PpluginVersion="${{ needs.prepare.outputs.version }}"
+          -PpluginArchivePath="verified-plugin/jetbrains-${{ needs.prepare.outputs.version }}.zip"
 
-      - name: Locate signed plugin ZIP
+      - name: Locate exact signed plugin ZIP
         id: signed
         shell: bash
         run: |
-          zip_path="$(find verified-plugin -maxdepth 1 -type f -name '*-signed.zip' | sort | head -n 1)"
-          if [[ -z "${zip_path}" ]]; then
-            echo "No signed plugin ZIP found" >&2
+          zip_path="verified-plugin/jetbrains-${{ needs.prepare.outputs.version }}-signed.zip"
+          if [[ ! -f "${zip_path}" ]]; then
+            echo "Missing expected signed JetBrains ZIP ${zip_path}" >&2
             exit 1
           fi
           echo "zip_path=${zip_path}" >> "${GITHUB_OUTPUT}"
-          echo "zip_name=$(basename "${zip_path}")" >> "${GITHUB_OUTPUT}"
 
       - name: Upload signed workflow artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.signed.outputs.zip_name }}
+          name: jetbrains-${{ needs.prepare.outputs.version }}-signed
           path: ${{ steps.signed.outputs.zip_path }}
           if-no-files-found: error
 
-      - name: Create GitHub release and upload signed ZIP
+      - name: Create JetBrains GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
           ZIP_PATH: ${{ steps.signed.outputs.zip_path }}
           NOTES_PATH: .github/release-notes.md
         shell: bash
         run: |
           if [[ ! -s "${NOTES_PATH}" ]]; then
-            echo "Missing Chinese GitHub Release notes at ${NOTES_PATH}" >&2
+            echo "Missing Chinese JetBrains release notes at ${NOTES_PATH}" >&2
             exit 1
           fi
-
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release edit "${TAG}" --title "${TAG}" --notes-file "${NOTES_PATH}"
             gh release upload "${TAG}" "${ZIP_PATH}" --clobber
           else
             gh release create "${TAG}" "${ZIP_PATH}" --title "${TAG}" --notes-file "${NOTES_PATH}"
+          fi
+
+  vscode-build:
+    name: Verify and package VS Code extension
+    if: inputs.target == 'vscode'
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out selected tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: plugins/vscode/package-lock.json
+
+      - name: Verify and package extension
+        run: ./scripts/verify/vscode.sh
+
+      - name: Locate exact VSIX
+        id: artifact
+        shell: bash
+        run: |
+          vsix_path="plugins/vscode/build/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
+          if [[ ! -f "${vsix_path}" ]]; then
+            echo "Missing expected VSIX ${vsix_path}" >&2
+            exit 1
+          fi
+          echo "vsix_path=${vsix_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload verified VSIX artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: tomljump-vscode-${{ needs.prepare.outputs.version }}
+          path: ${{ steps.artifact.outputs.vsix_path }}
+          if-no-files-found: error
+
+  vscode-publish:
+    name: Publish VS Code-compatible extension
+    if: inputs.target == 'vscode'
+    needs:
+      - prepare
+      - vscode-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out selected tag
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: plugins/vscode/package-lock.json
+
+      - name: Install pinned publishing tools
+        run: npm ci
+        working-directory: plugins/vscode
+
+      - name: Download verified VSIX artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: tomljump-vscode-${{ needs.prepare.outputs.version }}
+          path: verified-extension
+
+      - name: Publish to Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        working-directory: plugins/vscode
+        run: >
+          npx vsce publish
+          --packagePath "../../verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        working-directory: plugins/vscode
+        run: >
+          npx ovsx publish
+          "../../verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
+
+      - name: Create VS Code GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          VSIX_PATH: verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix
+          NOTES_PATH: .github/release-notes-vscode.md
+        shell: bash
+        run: |
+          if [[ ! -s "${NOTES_PATH}" ]]; then
+            echo "Missing Chinese VS Code release notes at ${NOTES_PATH}" >&2
+            exit 1
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --title "${TAG}" --notes-file "${NOTES_PATH}"
+            gh release upload "${TAG}" "${VSIX_PATH}" --clobber
+          else
+            gh release create "${TAG}" "${VSIX_PATH}" --title "${TAG}" --notes-file "${NOTES_PATH}"
           fi

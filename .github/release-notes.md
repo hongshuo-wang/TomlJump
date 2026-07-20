@@ -1,9 +1,9 @@
 ## 本次更新
 
-- 新增嵌套 TOML 路径双向导航，可在嵌套 table、key、root dotted key 与最近的明确源码配置容器之间跳转。
-- TOML 路径提取改用 JetBrains TOML PSI，支持 quoted key、dotted key、普通 table 和 array of tables。
-- 继续保持保守匹配：dotted path 只有叶子段参与跳转；inline table 成员、畸形路径和容器不匹配不会产生猜测式导航。
-- 扩充 `examples/navigation-demo`，加入新增语法的正向、反向和负面手测案例。
+- 新增从 `pyproject.toml` `[project.scripts]` 值跳转到 Python 模块和顶层 callable。
+- 模块片段与 callable 片段可分别跳转，支持普通与 `async` 顶层函数以及 package `__init__.py` 模块。
+- 继续保持保守匹配：缺失模块、缺失 callable、嵌套函数和非标准 TOML 上下文不会产生猜测式导航。
+- 扩充自动化测试与 `examples/navigation-demo`，覆盖正向跳转和不应跳转的负面案例。
 
 ## 兼容性
 

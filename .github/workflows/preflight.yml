@@ -1,0 +1,149 @@
+name: Preflight
+
+"on":
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Product line to verify
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - jetbrains
+          - vscode
+
+permissions:
+  contents: read
+
+jobs:
+  versions:
+    name: Read configured versions
+    runs-on: ubuntu-latest
+    outputs:
+      jetbrains: ${{ steps.versions.outputs.jetbrains }}
+      vscode: ${{ steps.versions.outputs.vscode }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Read version sources
+        id: versions
+        shell: bash
+        run: |
+          jetbrains="$(sed -n 's/^pluginVersion=//p' gradle.properties)"
+          vscode="$(node -p "require('./plugins/vscode/package.json').version")"
+          echo "jetbrains=${jetbrains}" >> "${GITHUB_OUTPUT}"
+          echo "vscode=${vscode}" >> "${GITHUB_OUTPUT}"
+
+  jetbrains-build:
+    name: Verify and build JetBrains plugin
+    if: inputs.target != 'vscode'
+    needs: versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run JetBrains verification
+        env:
+          ORG_GRADLE_PROJECT_pluginVersion: ${{ needs.versions.outputs.jetbrains }}
+        run: ./scripts/verify/jetbrains.sh
+
+      - name: Upload unsigned plugin artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: preflight-jetbrains-${{ needs.versions.outputs.jetbrains }}
+          path: plugins/jetbrains/build/distributions/jetbrains-${{ needs.versions.outputs.jetbrains }}.zip
+          if-no-files-found: error
+
+  jetbrains-compatibility:
+    name: Verify ${{ matrix.name }} compatibility
+    if: inputs.target != 'vscode'
+    needs:
+      - versions
+      - jetbrains-build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: IntelliJ IDEA Community 2024.3
+            id: idea-2024.3
+            type: IC
+            version: "2024.3"
+          - name: PyCharm 2024.3
+            id: pycharm-2024.3
+            type: PY
+            version: "2024.3"
+          - name: GoLand 2024.3
+            id: goland-2024.3
+            type: GO
+            version: "2024.3"
+          - name: WebStorm 2024.3
+            id: webstorm-2024.3
+            type: WS
+            version: "2024.3"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download unsigned plugin artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: preflight-jetbrains-${{ needs.versions.outputs.jetbrains }}
+          path: verified-plugin
+
+      - name: Run JetBrains Plugin Verifier
+        run: >
+          ./gradlew :plugins:jetbrains:verifyPlugin -x buildPlugin
+          -PpluginVersion="${{ needs.versions.outputs.jetbrains }}"
+          -PpluginArchivePath="verified-plugin/jetbrains-${{ needs.versions.outputs.jetbrains }}.zip"
+          -PverifierIde="${{ matrix.type }}"
+          -PverifierIdeVersion="${{ matrix.version }}"
+
+      - name: Upload Plugin Verifier report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: preflight-plugin-verifier-${{ matrix.id }}
+          path: plugins/jetbrains/build/reports/pluginVerifier/
+          if-no-files-found: ignore
+
+  vscode:
+    name: Verify and package VS Code extension
+    if: inputs.target != 'jetbrains'
+    needs: versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: plugins/vscode/package-lock.json
+
+      - name: Run VS Code verification
+        run: ./scripts/verify/vscode.sh
+
+      - name: Upload verified VSIX artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: preflight-tomljump-vscode-${{ needs.versions.outputs.vscode }}
+          path: plugins/vscode/build/tomljump-vscode-${{ needs.versions.outputs.vscode }}.vsix
+          if-no-files-found: error

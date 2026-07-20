@@ -43,17 +43,17 @@ val pluginDescription = """
 
 val pluginChangeNotes = """
     <ul>
-        <li>新增嵌套 TOML 路径双向导航，使用最接近字段的明确配置容器匹配嵌套 table、key 和 root dotted key。</li>
-        <li>改用 JetBrains TOML PSI 提取路径，支持 quoted key、dotted key、普通 table 和 array of tables。</li>
-        <li>继续保持保守导航：dotted path 仅叶子段参与跳转，inline table 成员、畸形路径和容器不匹配保持静默。</li>
-        <li>扩充可复用手测项目，覆盖新增语法、正反向跳转和不应跳转的负面案例。</li>
+        <li>新增从 pyproject.toml 的 project scripts 跳转到 Python 模块和顶层 callable，模块片段与 callable 片段可分别跳转。</li>
+        <li>支持普通与 async 顶层函数、package __init__.py 模块，并精确定位到模块文件或函数声明。</li>
+        <li>继续保持保守导航：缺失模块、缺失 callable、嵌套函数和非标准 TOML 上下文保持静默。</li>
+        <li>扩充自动化测试与 examples/navigation-demo，覆盖正向跳转和不应跳转的负面案例。</li>
     </ul>
     <hr/>
     <ul>
-        <li>Added bidirectional navigation for nested TOML paths, matching nested tables, keys, and root dotted keys through the nearest explicit source container.</li>
-        <li>Moved path extraction to JetBrains TOML PSI with support for quoted keys, dotted keys, standard tables, and arrays of tables.</li>
-        <li>Kept navigation conservative: only dotted-path leaf segments navigate, while inline-table members, malformed paths, and mismatched containers stay unresolved.</li>
-        <li>Expanded the reusable manual demo with positive and negative coverage for the new syntax.</li>
+        <li>Added navigation from pyproject.toml project scripts to Python modules and top-level callables, with separate navigation for module and callable segments.</li>
+        <li>Supported regular and async top-level functions plus package __init__.py modules, resolving to the exact module file or function declaration.</li>
+        <li>Kept navigation conservative: missing modules, missing callables, nested functions, and non-standard TOML contexts stay unresolved.</li>
+        <li>Expanded automated tests and examples/navigation-demo with positive and negative coverage for the workflow.</li>
     </ul>
 """.trimIndent()
 

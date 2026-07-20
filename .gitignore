@@ -1,8 +1,12 @@
 .gradle/
 .kotlin/
 .intellijPlatform/
+.vscode-test/
 build/
+dist/
+node_modules/
 out/
+out-test/
 .idea/
 *.iml
 **/build/

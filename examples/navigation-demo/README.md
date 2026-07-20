@@ -1,8 +1,10 @@
 # TomlJump 双向导航示例
 
-使用已安装本地 TomlJump 插件的 JetBrains IDE 打开本目录。所有检查都使用 Go to Declaration 或 Ctrl/Cmd-click。
+使用已安装本地 TomlJump 插件的 JetBrains IDE、VS Code、Cursor 或 Trae 打开本目录。所有检查都使用 Go to Definition/Declaration 或 Ctrl/Cmd-click。
 
 ## 安装本地开发包
+
+### JetBrains
 
 在仓库根目录运行：
 
@@ -16,6 +18,18 @@ GRADLE_USER_HOME=/private/tmp/tomljump-gradle-home \
 2. 打开齿轮菜单，选择 `Install Plugin from Disk...`。
 3. 选择 `plugins/jetbrains/build/distributions/jetbrains-1.3.0.zip`。
 4. 重启 IDE，然后将 `examples/navigation-demo` 作为项目打开。
+
+### VS Code、Cursor 与 Trae
+
+在仓库根目录运行：
+
+```bash
+cd plugins/vscode
+npm ci
+npm run package
+```
+
+在编辑器的 Extensions 视图中选择 `Install from VSIX...`，安装 `plugins/vscode/build/tomljump-vscode-0.1.0.vsix`，然后打开 `examples/navigation-demo`。
 
 ## 四种交互情况
 
@@ -82,9 +96,11 @@ tomljump-demo = "python.cli:main"
 
 # TomlJump Bidirectional Navigation Demo
 
-Open this directory in a JetBrains IDE with the locally built TomlJump plugin installed. Use Go to Declaration or Ctrl/Cmd-click for every check.
+Open this directory in a JetBrains IDE, VS Code, Cursor, or Trae with the local TomlJump plugin installed. Use Go to Definition/Declaration or Ctrl/Cmd-click for every check.
 
 ## Install The Local Development Build
+
+### JetBrains
 
 Run this command from the repository root:
 
@@ -98,6 +114,18 @@ GRADLE_USER_HOME=/private/tmp/tomljump-gradle-home \
 2. Open the gear menu and select `Install Plugin from Disk...`.
 3. Select `plugins/jetbrains/build/distributions/jetbrains-1.3.0.zip`.
 4. Restart the IDE and open `examples/navigation-demo` as the project.
+
+### VS Code, Cursor, And Trae
+
+Run this command from the repository root:
+
+```bash
+cd plugins/vscode
+npm ci
+npm run package
+```
+
+Choose `Install from VSIX...` in the editor's Extensions view, install `plugins/vscode/build/tomljump-vscode-0.1.0.vsix`, and open `examples/navigation-demo`.
 
 ## Four Interaction Cases
 

@@ -1,0 +1,94 @@
+{
+  "name": "tomljump",
+  "displayName": "TomlJump",
+  "description": "Navigate between TOML configuration and matching source code. / 在 TOML 配置与匹配的源码之间双向跳转。",
+  "version": "1.4.0",
+  "publisher": "tomljump",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hongshuo-wang/TomlJump.git",
+    "directory": "plugins/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/hongshuo-wang/TomlJump/issues"
+  },
+  "homepage": "https://github.com/hongshuo-wang/TomlJump#readme",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "toml",
+    "navigation",
+    "definition",
+    "cursor",
+    "trae"
+  ],
+  "activationEvents": [
+    "onLanguage:toml",
+    "onLanguage:go",
+    "onLanguage:python",
+    "onLanguage:java",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "toml",
+        "aliases": [
+          "TOML",
+          "TOML Configuration / TOML 配置"
+        ],
+        "extensions": [
+          ".toml"
+        ]
+      }
+    ]
+  },
+  "main": "./dist/extension.js",
+  "files": [
+    "dist/extension.js",
+    "README.md",
+    "CHANGELOG.md",
+    "icon.png",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "build:tests": "tsc -p tsconfig.test.json",
+    "check": "npm run validate:icon && npm run validate:marketplace-copy && npm run typecheck && npm run lint && npm test",
+    "generate:icon": "node scripts/generate-icon.mjs",
+    "lint": "eslint src",
+    "package": "npm run verify && node scripts/package.mjs",
+    "test": "vitest run",
+    "test:integration": "npm run build && npm run build:tests && node scripts/test-integration.mjs",
+    "typecheck": "tsc --noEmit",
+    "validate:icon": "node scripts/validate-icon.mjs",
+    "validate:marketplace-copy": "node scripts/validate-marketplace-copy.mjs",
+    "verify": "npm run check && npm run build && npm run test:integration"
+  },
+  "dependencies": {
+    "toml-eslint-parser": "0.10.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.31.0",
+    "@types/node": "20.19.9",
+    "@types/vscode": "1.85.0",
+    "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "3.9.2",
+    "esbuild": "0.28.1",
+    "eslint": "9.31.0",
+    "globals": "16.3.0",
+    "ovsx": "1.0.2",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.64.0",
+    "vitest": "4.1.10"
+  }
+}
