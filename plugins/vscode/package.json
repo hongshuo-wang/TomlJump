@@ -4,7 +4,7 @@
   "description": "Navigate between TOML configuration and matching source code. / 在 TOML 配置与匹配的源码之间双向跳转。",
   "version": "1.4.0",
   "packageManager": "npm@10.9.8",
-  "publisher": "tomljump",
+  "publisher": "harrisonwang",
   "license": "MIT",
   "repository": {
     "type": "git",

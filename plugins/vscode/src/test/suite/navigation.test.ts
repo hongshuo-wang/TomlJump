@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 export async function runNavigationTests(): Promise<void> {
   const workspace = vscode.workspace.workspaceFolders?.[0];
   assert.ok(workspace, "The navigation demo workspace must be open");
-  const extension = vscode.extensions.getExtension("tomljump.tomljump");
+  const extension = vscode.extensions.getExtension("harrisonwang.tomljump");
   assert.ok(extension, "TomlJump development extension must be installed");
   await extension.activate();
 

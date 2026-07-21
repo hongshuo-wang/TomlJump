@@ -18,6 +18,9 @@ const [manifestText, readme, changelog, packageScript, jetbrainsBuild, jetbrains
 const manifest = JSON.parse(manifestText);
 
 requireAsciiAndChinese(manifest.description, "VS Code extension description");
+if (manifest.publisher !== "harrisonwang") {
+  throw new Error("VS Code extension publisher must be harrisonwang");
+}
 if (manifest.repository?.directory !== "plugins/vscode") {
   throw new Error("VS Code repository metadata must declare the plugins/vscode monorepo directory");
 }
