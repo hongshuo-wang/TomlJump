@@ -308,6 +308,7 @@ jobs:
         working-directory: plugins/vscode
         run: >
           npx vsce publish
+          --skip-duplicate
           --packagePath "../../verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
 
       - name: Publish to Open VSX
@@ -316,6 +317,7 @@ jobs:
         working-directory: plugins/vscode
         run: >
           npx ovsx publish
+          --skip-duplicate
           "../../verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
 
       - name: Create VS Code GitHub release
