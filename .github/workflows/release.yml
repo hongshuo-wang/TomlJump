@@ -10,8 +10,9 @@ name: Release
         options:
           - jetbrains
           - vscode
+          - all
       tag:
-        description: Existing platform-prefixed release tag
+        description: Existing shared v<version> release tag
         required: true
         type: string
 
@@ -19,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.target }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
@@ -54,7 +55,7 @@ jobs:
 
   jetbrains-build:
     name: Verify and build JetBrains plugin
-    if: inputs.target == 'jetbrains'
+    if: inputs.target != 'vscode'
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -94,7 +95,7 @@ jobs:
 
   jetbrains-compatibility:
     name: Verify ${{ matrix.name }} compatibility
-    if: inputs.target == 'jetbrains'
+    if: inputs.target != 'vscode'
     needs:
       - prepare
       - jetbrains-build
@@ -155,14 +156,12 @@ jobs:
 
   jetbrains-publish:
     name: Sign and publish JetBrains plugin
-    if: inputs.target == 'jetbrains'
+    if: inputs.target != 'vscode'
     needs:
       - prepare
       - jetbrains-build
       - jetbrains-compatibility
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Check out selected tag
         uses: actions/checkout@v7
@@ -211,28 +210,9 @@ jobs:
           path: ${{ steps.signed.outputs.zip_path }}
           if-no-files-found: error
 
-      - name: Create JetBrains GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
-          ZIP_PATH: ${{ steps.signed.outputs.zip_path }}
-          NOTES_PATH: .github/release-notes.md
-        shell: bash
-        run: |
-          if [[ ! -s "${NOTES_PATH}" ]]; then
-            echo "Missing Chinese JetBrains release notes at ${NOTES_PATH}" >&2
-            exit 1
-          fi
-          if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" --title "${TAG}" --notes-file "${NOTES_PATH}"
-            gh release upload "${TAG}" "${ZIP_PATH}" --clobber
-          else
-            gh release create "${TAG}" "${ZIP_PATH}" --title "${TAG}" --notes-file "${NOTES_PATH}"
-          fi
-
   vscode-build:
     name: Verify and package VS Code extension
-    if: inputs.target == 'vscode'
+    if: inputs.target != 'jetbrains'
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -271,13 +251,11 @@ jobs:
 
   vscode-publish:
     name: Publish VS Code-compatible extension
-    if: inputs.target == 'vscode'
+    if: inputs.target != 'jetbrains'
     needs:
       - prepare
       - vscode-build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Check out selected tag
         uses: actions/checkout@v7
@@ -320,21 +298,81 @@ jobs:
           --skip-duplicate
           "../../verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
 
-      - name: Create VS Code GitHub release
+  github-release:
+    name: Create shared GitHub release
+    if: >
+      always() &&
+      needs.prepare.result == 'success' &&
+      (inputs.target == 'vscode' || needs.jetbrains-publish.result == 'success') &&
+      (inputs.target == 'jetbrains' || needs.vscode-publish.result == 'success')
+    needs:
+      - prepare
+      - jetbrains-publish
+      - vscode-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out selected tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download signed JetBrains plugin
+        if: inputs.target != 'vscode'
+        uses: actions/download-artifact@v8
+        with:
+          name: jetbrains-${{ needs.prepare.outputs.version }}-signed
+          path: release-assets/jetbrains
+
+      - name: Download VS Code extension
+        if: inputs.target != 'jetbrains'
+        uses: actions/download-artifact@v8
+        with:
+          name: tomljump-vscode-${{ needs.prepare.outputs.version }}
+          path: release-assets/vscode
+
+      - name: Select Chinese release notes
+        env:
+          RELEASE_TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          case "${RELEASE_TARGET}" in
+            jetbrains) cp .github/release-notes-jetbrains.md release-notes-selected.md ;;
+            vscode) cp .github/release-notes-vscode.md release-notes-selected.md ;;
+            all) cp .github/release-notes.md release-notes-selected.md ;;
+            *) echo "Unsupported release target ${RELEASE_TARGET}" >&2; exit 1 ;;
+          esac
+          test -s release-notes-selected.md
+
+      - name: Create or update release metadata
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-          VSIX_PATH: verified-extension/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix
-          NOTES_PATH: .github/release-notes-vscode.md
         shell: bash
         run: |
-          if [[ ! -s "${NOTES_PATH}" ]]; then
-            echo "Missing Chinese VS Code release notes at ${NOTES_PATH}" >&2
-            exit 1
-          fi
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" --title "${TAG}" --notes-file "${NOTES_PATH}"
-            gh release upload "${TAG}" "${VSIX_PATH}" --clobber
+            gh release edit "${TAG}" --title "${TAG}" --notes-file release-notes-selected.md
           else
-            gh release create "${TAG}" "${VSIX_PATH}" --title "${TAG}" --notes-file "${NOTES_PATH}"
+            gh release create "${TAG}" --title "${TAG}" --notes-file release-notes-selected.md
           fi
+
+      - name: Upload signed JetBrains plugin
+        if: inputs.target != 'vscode'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: >
+          gh release upload "${TAG}"
+          "release-assets/jetbrains/jetbrains-${{ needs.prepare.outputs.version }}-signed.zip"
+          --clobber
+
+      - name: Upload VS Code extension
+        if: inputs.target != 'jetbrains'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: >
+          gh release upload "${TAG}"
+          "release-assets/vscode/tomljump-vscode-${{ needs.prepare.outputs.version }}.vsix"
+          --clobber

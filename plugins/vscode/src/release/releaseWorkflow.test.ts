@@ -19,3 +19,28 @@ describe("release workflow retries", () => {
     );
   });
 });
+
+describe("shared release workflow", () => {
+  test("offers all platforms under one shared tag", () => {
+    expect(workflow).toContain("          - all");
+    expect(workflow).toContain("description: Existing shared v<version> release tag");
+    expect(workflow).toContain("group: release-${{ inputs.tag }}");
+  });
+
+  test("gates platform jobs and release assets for its own target or all", () => {
+    expect(occurrences("if: inputs.target != 'vscode'")).toBe(5);
+    expect(occurrences("if: inputs.target != 'jetbrains'")).toBe(4);
+  });
+
+  test("creates exactly one shared GitHub release after selected publications", () => {
+    expect(workflow).not.toContain("Create JetBrains GitHub release");
+    expect(workflow).not.toContain("Create VS Code GitHub release");
+    expect(occurrences("name: Create shared GitHub release")).toBe(1);
+    expect(workflow).toContain("github-release:");
+    expect(workflow).toContain("if: always()");
+  });
+});
+
+function occurrences(expected: string): number {
+  return workflow.split(expected).length - 1;
+}
