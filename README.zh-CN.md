@@ -5,7 +5,7 @@
 <h1 align="center">TomlJump</h1>
 
 <p align="center">
-  在 TOML 配置与定义它的源码之间双向跳转。
+  在 TOML 配置、项目文件与定义它们的源码之间快速跳转。
 </p>
 
 <p align="center">
@@ -13,145 +13,112 @@
 </p>
 
 <p align="center">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white">
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
-  <img alt="IntelliJ Platform" src="https://img.shields.io/badge/IntelliJ%20Platform-000000?logo=intellijidea&logoColor=white">
-  <img alt="VS Code API" src="https://img.shields.io/badge/VS%20Code%20API-007ACC?logo=visualstudiocode&logoColor=white">
-  <img alt="TOML" src="https://img.shields.io/badge/TOML-9C4121">
-  <img alt="Gradle" src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white">
-  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green">
-  <a href="https://linux.do/t/topic/2589906"><img alt="LINUX DO" src="https://img.shields.io/badge/LINUX-DO-FFB003.svg?logo=data:image/svg%2bxml;base64,DQo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiPjxwYXRoIGQ9Ik00Ni44Mi0uMDU1aDYuMjVxMjMuOTY5IDIuMDYyIDM4IDIxLjQyNmM1LjI1OCA3LjY3NiA4LjIxNSAxNi4xNTYgOC44NzUgMjUuNDV2Ni4yNXEtMi4wNjQgMjMuOTY4LTIxLjQzIDM4LTExLjUxMiA3Ljg4NS0yNS40NDUgOC44NzRoLTYuMjVxLTIzLjk3LTIuMDY0LTM4LjAwNC0yMS40M1EuOTcxIDY3LjA1Ni0uMDU0IDUzLjE4di02LjQ3M0MxLjM2MiAzMC43ODEgOC41MDMgMTguMTQ4IDIxLjM3IDguODE3IDI5LjA0NyAzLjU2MiAzNy41MjcuNjA0IDQ2LjgyMS0uMDU2IiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZWNlY2VjO2ZpbGwtb3BhY2l0eToxIi8+PHBhdGggZD0iTTQ3LjI2NiAyLjk1N3EyMi41My0uNjUgMzcuNzc3IDE1LjczOGE0OS43IDQ5LjcgMCAwIDEgNi44NjcgMTAuMTU3cS00MS45NjQuMjIyLTgzLjkzIDAgOS43NS0xOC42MTYgMzAuMDI0LTI0LjM4N2E2MSA2MSAwIDAgMSA5LjI2Mi0xLjUwOCIgc3R5bGU9InN0cm9rZTpub25lO2ZpbGwtcnVsZTpldmVub2RkO2ZpbGw6IzE5MTkxOTtmaWxsLW9wYWNpdHk6MSIvPjxwYXRoIGQ9Ik03Ljk4IDcwLjkyNmMyNy45NzctLjAzNSA1NS45NTQgMCA4My45My4xMTNRODMuNDI2IDg3LjQ3MyA2Ni4xMyA5NC4wODZxLTE4LjgxIDYuNTQ0LTM2LjgzMi0xLjg5OC0xNC4yMDMtNy4wOS0yMS4zMTctMjEuMjYyIiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZjlhZjAwO2ZpbGwtb3BhY2l0eToxIi8+PC9zdmc+"></a>
+  <a href="https://plugins.jetbrains.com/plugin/32933-tomljump"><img alt="JetBrains Marketplace" src="https://img.shields.io/jetbrains/plugin/v/32933-tomljump?label=JetBrains"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=harrisonwang.tomljump"><img alt="Visual Studio Marketplace" src="https://img.shields.io/visual-studio-marketplace/v/harrisonwang.tomljump?label=VS%20Marketplace"></a>
+  <a href="https://open-vsx.org/extension/harrisonwang/tomljump"><img alt="Open VSX" src="https://img.shields.io/open-vsx/v/harrisonwang/tomljump?label=Open%20VSX"></a>
+  <a href="https://github.com/hongshuo-wang/TomlJump/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/hongshuo-wang/TomlJump?label=Release"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green"></a>
 </p>
 
-TomlJump 为使用 TOML 作为配置的项目提供编辑器插件。它提供从 TOML 的值、table、key 到项目文件和源码声明的跳转，也支持从明确的源码配置声明反向跳回 TOML。
+TomlJump 是面向 TOML 配置项目的开源导航扩展。它在 TOML table、key 与匹配的源码声明之间建立专注的双向链接，也支持从 TOML value 直接跳转到项目文件和 Python entry point。
 
-它的策略偏保守：当配置关系不够明确时，TomlJump 会保持安静，不打扰普通编辑。
-
-## 功能
-
-- 从 TOML 字符串路径跳转到项目文件，例如 `schema = "./schemas/user.json"`。
-- 从 TOML table 和 key 跳转到匹配的配置代码。
-- 从源码中的配置容器和字段反向跳转到匹配的 TOML table 和 key。
-- 从 `[project.scripts]` entry point 的模块和 callable 片段跳转到 Python 源码声明。
-- 支持 Go、Python、Java、TypeScript、JavaScript 中较明确的配置引用匹配。
-- 使用编辑器原生 Go to Definition/Declaration 和 command/control click。
-- 无法判断为可靠配置关系时静默跳过，不打扰普通编辑。
-
-## 技术栈
-
-| 模块 | JetBrains | VS Code 兼容编辑器 |
-| --- | --- | --- |
-| 开发语言 | Kotlin | TypeScript |
-| 平台 | IntelliJ Platform SDK | 稳定版 VS Code Extension API |
-| 构建工具 | Gradle | npm、esbuild、VSCE |
-| TOML 解析 | JetBrains TOML language plugin | TOML 1.0 AST parser |
-| 测试 | Kotlin test、JUnit 4、IntelliJ Platform test framework | Vitest、VS Code Extension Host |
+TomlJump 优先保证可信度，而不是盲目扩大匹配范围。当关系存在语法错误、歧义或不受支持时，它会保持安静，不改变编辑器原有的导航行为。
 
 ## 安装
 
-### JetBrains Marketplace
+| 编辑器 | 推荐安装方式 |
+| --- | --- |
+| IntelliJ IDEA、PyCharm、GoLand、WebStorm 与兼容的 JetBrains IDE | 从 [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/32933-tomljump) 安装 TomlJump。 |
+| Visual Studio Code | 从 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=harrisonwang.tomljump) 安装 TomlJump。 |
+| Cursor、Trae 与其他兼容编辑器 | 从 [Open VSX](https://open-vsx.org/extension/harrisonwang/tomljump) 安装，或使用 GitHub Releases 中的 VSIX。 |
 
-如果 TomlJump 已上架 JetBrains Marketplace，可以在 IDE 中安装：
+需要离线或手动安装时，可从[最新 GitHub Release](https://github.com/hongshuo-wang/TomlJump/releases/latest)下载已签名的 JetBrains ZIP 或标准 VSIX。
 
-1. 打开 JetBrains IDE。
-2. 进入 `Settings` 或 `Preferences` > `Plugins` > `Marketplace`。
-3. 搜索 `TomlJump`。
-4. 安装插件，并按提示重启 IDE。
+## 支持哪些跳转
 
-### VS Code、Cursor 与 Trae
+在受支持的 TOML 和源码声明上，使用编辑器原生的 **Go to Definition/Declaration** 操作或 Ctrl/Cmd-click。
 
-从源码构建标准 VSIX：
+```toml
+schema = "./schemas/user.json"
 
-```bash
-cd plugins/vscode
-npm ci
-npm run package
+[server]
+port = 8080
+
+[project.scripts]
+tomljump = "tomljump.cli:main"
 ```
 
-在编辑器的 Extensions 视图中选择 `Install from VSIX...`，安装 `plugins/vscode/build/tomljump-vscode-1.4.0.vsix`。
+- **项目文件：** `./schemas/user.json` 会打开相对于当前 TOML 文件的目标文件。
+- **配置代码：** `server` 和 `port` 会跳转到匹配的源码容器和字段；受支持的源码声明也可以反向跳回对应的 TOML table 或 key。
+- **Python entry point：** 在 `pyproject.toml` 中，`tomljump.cli` 会解析到 Python module，`main` 则独立解析到顶层 `def` 或 `async def` callable。
 
-### 兼容性
+存在多个可信目标时，TomlJump 会使用编辑器原生的目标选择器，而不是自行猜测。
 
-TomlJump 面向平台构建号 243（2024.3）及之后的 JetBrains IDE。每次发布前都会使用 JetBrains Plugin Verifier，分别针对 IntelliJ IDEA Community、PyCharm、GoLand 和 WebStorm 的 2024.3 基线进行兼容性检查。
+## 支持的语言与 TOML 形式
 
-VSIX 面向稳定版 VS Code API 1.85 及之后版本，不使用 proposed API 或产品专用集成，可安装到兼容版本的 VS Code、Cursor 与 Trae。
+配置匹配支持：
 
-### 从源码打包安装
+- Go
+- Python
+- Java
+- TypeScript
+- JavaScript
 
-要求：
+TomlJump 支持标准 table、array of tables、嵌套 table path、quoted key 与 dotted key。Owner-aware matching 会把同名字段限定在正确的配置容器中。
 
-- JetBrains 构建需要 JDK 21 或更高版本。
-- VS Code 构建需要 Node.js 22。
-- Git。
+可复用的[导航演示项目](examples/navigation-demo)包含跨语言正向案例，以及验证保守行为的负面案例。
 
-完整验证并打包两条插件线：
+## TomlJump 不做什么
+
+TomlJump 不提供 TOML 语法高亮、格式化、schema 校验、诊断、补全、Find Usages 或重命名。请搭配你常用的 TOML 语言工具使用。
+
+Inline table 中的 key、语法错误的路径、dotted key 的非叶子段、局部或嵌套声明，以及其他低可信关系都不会产生推测性跳转。
+
+## 兼容性
+
+- **JetBrains：** 支持平台构建号 243（2024.3）及之后版本。每个版本都会针对 IntelliJ IDEA Community、PyCharm、GoLand 和 WebStorm 的 2024.3 基线进行兼容性检查。
+- **VS Code 兼容编辑器：** 支持稳定版 VS Code API 1.85 及之后版本。TomlJump 不使用 proposed API 或产品专用 API，同一个 VSIX 可用于兼容版本的 VS Code、Cursor 与 Trae。
+
+## 隐私
+
+TomlJump 不包含遥测，也不会通过网络发送项目文件或导航数据。仅在编辑器请求解析定义时，于本地完成匹配。
+
+## 参与开发
+
+TomlJump 是一个 monorepo，JetBrains 与 VS Code 兼容扩展拥有彼此独立的交付路径。
+
+| 路径 | 用途 |
+| --- | --- |
+| `core/tomljump-core` | 与编辑器无关的 Kotlin 分类与匹配逻辑 |
+| `plugins/jetbrains` | IntelliJ Platform 集成 |
+| `plugins/vscode` | 面向 VS Code 兼容编辑器的 TypeScript 扩展 |
+| `fixtures` | 测试使用的跨语言样例 |
+
+环境要求：
+
+- Gradle 和 JetBrains 验证使用 JDK 21
+- VS Code 验证使用 Node.js 22 与 npm 10.9.8
+- Git
+
+标准验证命令：
 
 ```bash
+# 同时验证两条产品线（以下 JAVA_HOME 写法适用于 macOS）
 JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/all.sh
-```
 
-仅验证并打包 JetBrains 插件：
-
-```bash
+# 仅验证 JetBrains
 JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/jetbrains.sh
-```
 
-只打包 JetBrains 插件 ZIP：
-
-```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:buildPlugin
-```
-
-ZIP 产物路径：
-
-```text
-plugins/jetbrains/build/distributions/
-```
-
-仅验证并打包 VS Code 兼容扩展：
-
-```bash
+# 仅验证 VS Code 兼容扩展
 ./scripts/verify/vscode.sh
 ```
 
-VSIX 产物路径：
-
-```text
-plugins/vscode/build/
-```
-
-本地安装 ZIP：
-
-1. 打开 JetBrains IDE。
-2. 进入 `Settings` 或 `Preferences` > `Plugins`。
-3. 打开齿轮菜单。
-4. 选择 `Install Plugin from Disk...`。
-5. 选择生成的 ZIP 文件。
-
-## 开发
-
-项目结构：
-
-- `core/tomljump-core`：与编辑器无关的 Kotlin 分类和匹配逻辑。
-- `plugins/jetbrains`：IntelliJ Platform 集成。
-- `plugins/vscode`：面向 VS Code 兼容编辑器的 TypeScript 扩展。
-- `fixtures`：测试使用的跨语言示例。
-
-常用命令：
-
-```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :core:tomljump-core:test
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:test
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:buildPlugin
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/jetbrains.sh
-./scripts/verify/vscode.sh
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/all.sh
-```
+在其他操作系统上运行 Gradle 或 JetBrains 验证命令前，请将 `JAVA_HOME` 指向 JDK 21。
 
 ## 社区讨论
 
-欢迎在 [Linux DO 的 TomlJump 主题](https://linux.do/t/topic/2589906)中交流使用反馈、问题和想法。
+欢迎在 [Linux DO 的 TomlJump 主题](https://linux.do/t/topic/2589906)或 [GitHub Issues](https://github.com/hongshuo-wang/TomlJump/issues)中交流使用反馈、问题和想法。
 
 ## 许可证
 
-TomlJump 使用 MIT 许可证发布，详见 [LICENSE](LICENSE)。
+TomlJump 使用 [MIT License](LICENSE) 发布。

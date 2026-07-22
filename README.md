@@ -5,7 +5,7 @@
 <h1 align="center">TomlJump</h1>
 
 <p align="center">
-  Navigate both ways between TOML configuration and the source code that defines it.
+  Navigate between TOML configuration, project files, and the source code that defines them.
 </p>
 
 <p align="center">
@@ -13,145 +13,112 @@
 </p>
 
 <p align="center">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white">
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
-  <img alt="IntelliJ Platform" src="https://img.shields.io/badge/IntelliJ%20Platform-000000?logo=intellijidea&logoColor=white">
-  <img alt="VS Code API" src="https://img.shields.io/badge/VS%20Code%20API-007ACC?logo=visualstudiocode&logoColor=white">
-  <img alt="TOML" src="https://img.shields.io/badge/TOML-9C4121">
-  <img alt="Gradle" src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white">
-  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green">
-  <a href="https://linux.do/t/topic/2589906"><img alt="LINUX DO" src="https://img.shields.io/badge/LINUX-DO-FFB003.svg?logo=data:image/svg%2bxml;base64,DQo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiPjxwYXRoIGQ9Ik00Ni44Mi0uMDU1aDYuMjVxMjMuOTY5IDIuMDYyIDM4IDIxLjQyNmM1LjI1OCA3LjY3NiA4LjIxNSAxNi4xNTYgOC44NzUgMjUuNDV2Ni4yNXEtMi4wNjQgMjMuOTY4LTIxLjQzIDM4LTExLjUxMiA3Ljg4NS0yNS40NDUgOC44NzRoLTYuMjVxLTIzLjk3LTIuMDY0LTM4LjAwNC0yMS40M1EuOTcxIDY3LjA1Ni0uMDU0IDUzLjE4di02LjQ3M0MxLjM2MiAzMC43ODEgOC41MDMgMTguMTQ4IDIxLjM3IDguODE3IDI5LjA0NyAzLjU2MiAzNy41MjcuNjA0IDQ2LjgyMS0uMDU2IiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZWNlY2VjO2ZpbGwtb3BhY2l0eToxIi8+PHBhdGggZD0iTTQ3LjI2NiAyLjk1N3EyMi41My0uNjUgMzcuNzc3IDE1LjczOGE0OS43IDQ5LjcgMCAwIDEgNi44NjcgMTAuMTU3cS00MS45NjQuMjIyLTgzLjkzIDAgOS43NS0xOC42MTYgMzAuMDI0LTI0LjM4N2E2MSA2MSAwIDAgMSA5LjI2Mi0xLjUwOCIgc3R5bGU9InN0cm9rZTpub25lO2ZpbGwtcnVsZTpldmVub2RkO2ZpbGw6IzE5MTkxOTtmaWxsLW9wYWNpdHk6MSIvPjxwYXRoIGQ9Ik03Ljk4IDcwLjkyNmMyNy45NzctLjAzNSA1NS45NTQgMCA4My45My4xMTNRODMuNDI2IDg3LjQ3MyA2Ni4xMyA5NC4wODZxLTE4LjgxIDYuNTQ0LTM2LjgzMi0xLjg5OC0xNC4yMDMtNy4wOS0yMS4zMTctMjEuMjYyIiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZjlhZjAwO2ZpbGwtb3BhY2l0eToxIi8+PC9zdmc+"></a>
+  <a href="https://plugins.jetbrains.com/plugin/32933-tomljump"><img alt="JetBrains Marketplace" src="https://img.shields.io/jetbrains/plugin/v/32933-tomljump?label=JetBrains"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=harrisonwang.tomljump"><img alt="Visual Studio Marketplace" src="https://img.shields.io/visual-studio-marketplace/v/harrisonwang.tomljump?label=VS%20Marketplace"></a>
+  <a href="https://open-vsx.org/extension/harrisonwang/tomljump"><img alt="Open VSX" src="https://img.shields.io/open-vsx/v/harrisonwang/tomljump?label=Open%20VSX"></a>
+  <a href="https://github.com/hongshuo-wang/TomlJump/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/hongshuo-wang/TomlJump?label=Release"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green"></a>
 </p>
 
-TomlJump provides editor plugins for projects that use TOML as configuration. It adds focused navigation from TOML values, tables, and keys to project files and source declarations, and from supported source declarations back to TOML.
+TomlJump is an open-source navigation extension for projects that use TOML as configuration. It adds focused, bidirectional links between TOML tables and keys and matching source declarations, plus direct links from TOML values to project files and Python entry points.
 
-The plugin is intentionally conservative: when a configuration relationship is not credible, TomlJump stays quiet.
+TomlJump favors confidence over coverage. When a relationship is malformed, ambiguous, or unsupported, it stays quiet and leaves the editor's existing navigation unchanged.
 
-## Features
+## Install
 
-- Jump from TOML string file paths to project files, for example `schema = "./schemas/user.json"`.
-- Jump from TOML tables and keys to matching configuration code.
-- Jump from supported configuration containers and fields in source code back to matching TOML tables and keys.
-- Navigate `[project.scripts]` entry-point module and callable segments to Python source declarations.
-- Resolve clear configuration references in Go, Python, Java, TypeScript, and JavaScript.
-- Use the editor's normal Go to Definition/Declaration action and command/control click.
-- Fail quietly when a configuration relationship is not credible.
+| Editor | Recommended installation |
+| --- | --- |
+| IntelliJ IDEA, PyCharm, GoLand, WebStorm, and compatible JetBrains IDEs | Install [TomlJump from JetBrains Marketplace](https://plugins.jetbrains.com/plugin/32933-tomljump). |
+| Visual Studio Code | Install [TomlJump from Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=harrisonwang.tomljump). |
+| Cursor, Trae, and other compatible editors | Install from [Open VSX](https://open-vsx.org/extension/harrisonwang/tomljump), or use the VSIX from GitHub Releases. |
 
-## Tech Stack
+For offline or manual installation, download the signed JetBrains ZIP or standard VSIX from the [latest GitHub Release](https://github.com/hongshuo-wang/TomlJump/releases/latest).
 
-| Area | JetBrains | VS Code-compatible editors |
-| --- | --- | --- |
-| Language | Kotlin | TypeScript |
-| Platform | IntelliJ Platform SDK | Stable VS Code Extension API |
-| Build | Gradle | npm, esbuild, VSCE |
-| TOML parsing | JetBrains TOML language plugin | TOML 1.0 AST parser |
-| Tests | Kotlin test, JUnit 4, IntelliJ Platform test framework | Vitest, VS Code Extension Host |
+## What You Can Navigate
 
-## Installation
+Use the editor's normal **Go to Definition/Declaration** action or Ctrl/Cmd-click on supported TOML and source declarations.
 
-### JetBrains Marketplace
+```toml
+schema = "./schemas/user.json"
 
-If TomlJump is available in JetBrains Marketplace, install it from your IDE:
+[server]
+port = 8080
 
-1. Open your JetBrains IDE.
-2. Go to `Settings` or `Preferences` > `Plugins` > `Marketplace`.
-3. Search for `TomlJump`.
-4. Install the plugin and restart the IDE if prompted.
-
-### VS Code, Cursor, And Trae
-
-Build the standard VSIX from source:
-
-```bash
-cd plugins/vscode
-npm ci
-npm run package
+[project.scripts]
+tomljump = "tomljump.cli:main"
 ```
 
-Choose `Install from VSIX...` in the editor's Extensions view and select `plugins/vscode/build/tomljump-vscode-1.4.0.vsix`.
+- **Project files:** `./schemas/user.json` opens the matching file relative to the TOML file.
+- **Configuration code:** `server` and `port` navigate to a matching source container and field. Supported source declarations navigate back to the matching TOML table or key.
+- **Python entry points:** in `pyproject.toml`, `tomljump.cli` resolves to the Python module and `main` resolves separately to a top-level `def` or `async def` callable.
 
-### Compatibility
+When more than one target is credible, TomlJump uses the editor's native target chooser instead of guessing.
 
-TomlJump targets JetBrains IDEs on platform build 243 (2024.3) and later. Each release is checked with JetBrains Plugin Verifier against the 2024.3 baseline for IntelliJ IDEA Community, PyCharm, GoLand, and WebStorm before publication.
+## Supported Languages And TOML Forms
 
-The VSIX targets stable VS Code API 1.85 and later without proposed APIs or product-specific integrations. It is designed for compatible VS Code, Cursor, and Trae versions.
+Configuration matching is available for:
 
-### Build From Source
+- Go
+- Python
+- Java
+- TypeScript
+- JavaScript
+
+TomlJump understands standard tables, arrays of tables, nested table paths, quoted keys, and dotted keys. Owner-aware matching keeps fields with the same name attached to the correct configuration container.
+
+The reusable [navigation demo](examples/navigation-demo) contains positive and conservative negative cases across the supported languages.
+
+## What TomlJump Does Not Do
+
+TomlJump does not provide TOML syntax highlighting, formatting, schema validation, diagnostics, completion, Find Usages, or rename support. Use it alongside your preferred TOML language tooling.
+
+Inline-table keys, malformed paths, non-leaf dotted-key segments, local or nested declarations, and other low-confidence relationships do not produce speculative navigation.
+
+## Compatibility
+
+- **JetBrains:** platform build 243 (2024.3) or later. Releases are checked against the 2024.3 baselines of IntelliJ IDEA Community, PyCharm, GoLand, and WebStorm.
+- **VS Code-compatible editors:** stable VS Code API 1.85 or later. TomlJump uses no proposed or product-specific APIs, so the same VSIX is designed for compatible VS Code, Cursor, and Trae versions.
+
+## Privacy
+
+TomlJump contains no telemetry and does not send project files or navigation data over the network. Resolution happens locally when the editor requests a definition.
+
+## Contributing
+
+TomlJump is a monorepo with independent JetBrains and VS Code-compatible delivery paths.
+
+| Path | Purpose |
+| --- | --- |
+| `core/tomljump-core` | Editor-agnostic Kotlin classification and matching logic |
+| `plugins/jetbrains` | IntelliJ Platform integration |
+| `plugins/vscode` | TypeScript extension for VS Code-compatible editors |
+| `fixtures` | Cross-language samples used by tests |
 
 Requirements:
 
-- JDK 21 or newer for JetBrains builds.
-- Node.js 22 for VS Code builds.
-- Git.
+- JDK 21 for Gradle and JetBrains verification
+- Node.js 22 and npm 10.9.8 for VS Code verification
+- Git
 
-Build and verify both plugin lines:
+Canonical verification commands:
 
 ```bash
+# Both product lines (the JAVA_HOME form below is for macOS)
 JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/all.sh
-```
 
-Build and verify only the JetBrains plugin:
-
-```bash
+# JetBrains only
 JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/jetbrains.sh
-```
 
-Build only the JetBrains plugin ZIP:
-
-```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:buildPlugin
-```
-
-The ZIP artifact is written to:
-
-```text
-plugins/jetbrains/build/distributions/
-```
-
-Build and verify only the VS Code-compatible extension:
-
-```bash
+# VS Code-compatible extension only
 ./scripts/verify/vscode.sh
 ```
 
-The VSIX artifact is written to:
-
-```text
-plugins/vscode/build/
-```
-
-Install the ZIP locally:
-
-1. Open your JetBrains IDE.
-2. Go to `Settings` or `Preferences` > `Plugins`.
-3. Open the gear menu.
-4. Choose `Install Plugin from Disk...`.
-5. Select the generated ZIP file.
-
-## Development
-
-Project layout:
-
-- `core/tomljump-core`: editor-agnostic Kotlin classification and matching logic.
-- `plugins/jetbrains`: IntelliJ Platform integration.
-- `plugins/vscode`: TypeScript extension for VS Code-compatible editors.
-- `fixtures`: cross-language samples used by tests.
-
-Useful commands:
-
-```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :core:tomljump-core:test
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:test
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew :plugins:jetbrains:buildPlugin
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/jetbrains.sh
-./scripts/verify/vscode.sh
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./scripts/verify/all.sh
-```
+On other operating systems, set `JAVA_HOME` to a JDK 21 installation before running the Gradle or JetBrains verification commands.
 
 ## Community
 
-You are welcome to discuss TomlJump usage feedback, questions, and ideas in the [TomlJump topic on Linux DO](https://linux.do/t/topic/2589906).
+Questions, usage feedback, and ideas are welcome in the [TomlJump topic on Linux DO](https://linux.do/t/topic/2589906) and in [GitHub Issues](https://github.com/hongshuo-wang/TomlJump/issues).
 
 ## License
 
-TomlJump is released under the MIT License. See [LICENSE](LICENSE).
+TomlJump is released under the [MIT License](LICENSE).
