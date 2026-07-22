@@ -1,6 +1,6 @@
 # TomlJump 双向导航示例
 
-使用已安装本地 TomlJump 插件的 JetBrains IDE、VS Code、Cursor 或 Trae 打开本目录。所有检查都使用 Go to Definition/Declaration 或 Ctrl/Cmd-click。
+使用已安装本地 TomlJump 插件的 JetBrains IDE、VS Code 或兼容编辑器打开本目录。所有检查都使用 Go to Definition/Declaration 或 Ctrl/Cmd-click。
 
 ## 安装本地开发包
 
@@ -19,7 +19,7 @@ GRADLE_USER_HOME=/private/tmp/tomljump-gradle-home \
 3. 选择 `plugins/jetbrains/build/distributions/jetbrains-1.3.0.zip`。
 4. 重启 IDE，然后将 `examples/navigation-demo` 作为项目打开。
 
-### VS Code、Cursor 与 Trae
+### VS Code 及兼容编辑器
 
 在仓库根目录运行：
 
@@ -96,7 +96,7 @@ tomljump-demo = "python.cli:main"
 
 # TomlJump Bidirectional Navigation Demo
 
-Open this directory in a JetBrains IDE, VS Code, Cursor, or Trae with the local TomlJump plugin installed. Use Go to Definition/Declaration or Ctrl/Cmd-click for every check.
+Open this directory in a JetBrains IDE, VS Code, or a compatible editor with the local TomlJump plugin installed. Use Go to Definition/Declaration or Ctrl/Cmd-click for every check.
 
 ## Install The Local Development Build
 
@@ -115,7 +115,7 @@ GRADLE_USER_HOME=/private/tmp/tomljump-gradle-home \
 3. Select `plugins/jetbrains/build/distributions/jetbrains-1.3.0.zip`.
 4. Restart the IDE and open `examples/navigation-demo` as the project.
 
-### VS Code, Cursor, And Trae
+### VS Code And Compatible Editors
 
 Run this command from the repository root:
 

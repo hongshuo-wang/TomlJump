@@ -30,7 +30,7 @@ TomlJump favors confidence over coverage. When a relationship is malformed, ambi
 | --- | --- |
 | IntelliJ IDEA, PyCharm, GoLand, WebStorm, and compatible JetBrains IDEs | Install [TomlJump from JetBrains Marketplace](https://plugins.jetbrains.com/plugin/32933-tomljump). |
 | Visual Studio Code | Install [TomlJump from Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=harrisonwang.tomljump). |
-| Cursor, Trae, and other compatible editors | Install from [Open VSX](https://open-vsx.org/extension/harrisonwang/tomljump), or use the VSIX from GitHub Releases. |
+| Other VS Code-compatible editors | Install from [Open VSX](https://open-vsx.org/extension/harrisonwang/tomljump), or use the VSIX from GitHub Releases. |
 
 For offline or manual installation, download the signed JetBrains ZIP or standard VSIX from the [latest GitHub Release](https://github.com/hongshuo-wang/TomlJump/releases/latest).
 
@@ -77,7 +77,7 @@ Inline-table keys, malformed paths, non-leaf dotted-key segments, local or neste
 ## Compatibility
 
 - **JetBrains:** platform build 243 (2024.3) or later. Releases are checked against the 2024.3 baselines of IntelliJ IDEA Community, PyCharm, GoLand, and WebStorm.
-- **VS Code-compatible editors:** stable VS Code API 1.85 or later. TomlJump uses no proposed or product-specific APIs, so the same VSIX is designed for compatible VS Code, Cursor, and Trae versions.
+- **VS Code and compatible editors:** VS Code Extension API 1.85 or later. TomlJump uses no proposed or product-specific APIs, so the standard VSIX is designed for editors that implement this API baseline.
 
 ## Privacy
 

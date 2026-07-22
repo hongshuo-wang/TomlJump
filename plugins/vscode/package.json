@@ -26,8 +26,7 @@
     "toml",
     "navigation",
     "definition",
-    "cursor",
-    "trae"
+    "vscode-compatible"
   ],
   "activationEvents": [
     "onLanguage:toml",

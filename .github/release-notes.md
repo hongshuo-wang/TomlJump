@@ -13,4 +13,4 @@
 - 支持 TOML table、key 与 Go、Python、Java、TypeScript、JavaScript 配置声明之间的双向跳转。
 - 支持 TOML 相对文件路径、nested table、quoted key、dotted key 和 array of tables。
 - 支持从 `pyproject.toml` `[project.scripts]` 的模块和 callable 片段跳转到 Python 源码。
-- 使用稳定 VS Code Extension API，同一个 VSIX 可安装到兼容版本的 VS Code、Cursor 与 Trae。
+- 使用稳定 VS Code Extension API，同一个 VSIX 可安装到实现 API 1.85 基线的 VS Code 及兼容编辑器。
